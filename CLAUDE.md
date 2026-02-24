@@ -65,7 +65,28 @@ prisma/{regionId}/        리전별 Prisma 스키마 + config
 3. **ActionResult 단방향**: 모든 Server Action은 `ok(data)` 또는 `fail(error)` 반환. 클라이언트에서 `result.success`로 분기
 4. **멀티 리전 Prisma**: `getPrismaClient(regionId)` — 리전 ID로 캐시된 PrismaClient 반환. `DATABASE_URL_{REGION_ID}` 환경 변수 사용
 5. **리전 검증**: 모든 액션/페이지에서 `getRegion(regionId)` 검증 후 진행. 유효하지 않으면 fail 또는 redirect
-6. **스키마 동기화**: Platform이 `prisma db push`로 스키마 관리. Admin은 `prisma db pull`로 읽기 전용 동기화. Docker dev 환경에서는 자동 실행
+6. **스키마 동기화**: Platform이 `prisma db push`로 스키마 관리. Admin은 `prisma db pull`로 읽기 전용 동기화
+
+## ⚠️ 스키마 변경 워크플로우 (최우선 규칙)
+
+**Admin은 자체 DB가 없다. Platform의 PostgreSQL을 공유한다.**
+**스키마 변경이 필요하면 반드시 아래 순서를 따라야 한다. 이 순서를 건너뛰거나 바꾸면 배포가 깨진다.**
+
+```
+1. Platform 스키마 수정  →  ../esg-platform/prisma/schema.prisma
+2. Platform DB 반영      →  cd ../esg-platform && npm run db:push
+3. Platform 커밋/push
+4. Admin 스키마 동기화   →  npm run db:pull:kr
+5. Admin 커밋/push       →  변경된 prisma/kr/schema.prisma 반드시 커밋
+```
+
+**절대 하면 안 되는 것:**
+- Admin에서 `prisma db push` 실행 (스키마 owner가 아님)
+- Admin의 `prisma/kr/schema.prisma`를 수동으로 편집 (`db pull`로만 갱신)
+- 스키마 변경 없이 Admin 코드에서 존재하지 않는 모델/필드 사용
+- Platform 스키마 변경 후 Admin `db pull` + 커밋을 빠뜨림 (CI/CD는 커밋된 스키마만 사용, DB 접근 없음)
+
+**Docker dev 환경에서는** Admin 컨테이너 시작 시 `db pull`이 자동 실행된다. 하지만 프로덕션 CI/CD는 레포에 커밋된 `schema.prisma`로 `prisma generate`만 실행하므로, 반드시 `db pull` 결과를 커밋해야 한다.
 
 ## Server Action 템플릿
 
@@ -277,7 +298,8 @@ Subscription: workspaceId (1:1), status, currentPeriodStart/End
 - lucide-react 외 아이콘 라이브러리 사용
 - CSS 변수 대신 하드코딩 색상 사용 (플랜 뱃지 등 도메인 컬러 예외)
 - `console.log`/`console.error` 사용 (Pino logger 사용)
-- K-ESG DB 스키마 직접 수정 (`prisma db push` 금지 — `db pull`만 사용)
+- Admin에서 `prisma db push` 실행 또는 `prisma/kr/schema.prisma` 수동 편집 (위 "스키마 변경 워크플로우" 참조)
+- Platform 스키마 변경 후 Admin에서 `db pull` + 커밋을 빠뜨리기 (CI/CD 빌드 깨짐)
 - hook/이벤트 핸들러 없이 `"use client"` 사용
 - 외부 상태 관리 라이브러리 도입
 
