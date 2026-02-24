@@ -9,7 +9,11 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate --config=prisma/kr/prisma.config.ts && npm run build
+RUN npx prisma generate --config=prisma/kr/prisma.config.ts \
+    && AUTH_SECRET="build-time-placeholder" \
+       ADMIN_EMAILS="build@placeholder.com" \
+       REGIONS='[{"id":"kr","name":"kr","domain":"placeholder","flag":"🏳"}]' \
+       npm run build
 
 FROM base AS runner
 WORKDIR /app
