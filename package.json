@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:pull:kr": "prisma db pull --schema=prisma/kr/schema.prisma",
-    "db:generate:kr": "prisma generate --schema=prisma/kr/schema.prisma"
+    "db:pull:kr": "prisma db pull --config=prisma/kr/prisma.config.ts",
+    "db:generate:kr": "prisma generate --config=prisma/kr/prisma.config.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

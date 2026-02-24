@@ -1,0 +1,154 @@
+// This schema is managed via `prisma db pull` from the K-ESG production database.
+// Do NOT manually edit — run `npm run db:pull:kr` to sync.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client-kr"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Models will be populated by `prisma db pull`.
+// Placeholder models for type-checking until first db pull:
+
+enum PlanCode {
+  FREE
+  PRO
+}
+
+enum Role {
+  OWNER
+  VIEWER
+}
+
+enum CreditType {
+  INITIAL
+  MONTHLY
+  PURCHASE
+  CONSUME
+  REFUND
+  ADMIN
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PREPROCESSED
+  CLASSIFIED
+  ANALYZING
+  ANALYZED
+}
+
+enum EsgStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?  @unique
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships       WorkspaceMember[]
+  createdWorkspaces Workspace[]       @relation("createdWorkspaces")
+}
+
+model Workspace {
+  id             String   @id @default(cuid())
+  name           String
+  businessNumber String
+  creditBalance  Int      @default(0)
+  planCode       PlanCode @default(FREE)
+  createdById    String?
+  createdBy      User?    @relation("createdWorkspaces", fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  members       WorkspaceMember[]
+  documents     Document[]
+  esgSummaries  EsgSummary[]
+  creditLedgers CreditLedger[]
+  subscription  Subscription?
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        Role     @default(VIEWER)
+  joinedAt    DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([userId, workspaceId])
+}
+
+model Document {
+  id          String         @id @default(cuid())
+  workspaceId String
+  fileName    String
+  status      DocumentStatus @default(UPLOADED)
+  createdAt   DateTime       @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model EsgSummary {
+  id          String    @id @default(cuid())
+  workspaceId String
+  esgItemCode String
+  status      EsgStatus @default(NOT_STARTED)
+  summary     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, esgItemCode])
+}
+
+model CreditLedger {
+  id          String     @id @default(cuid())
+  workspaceId String
+  amount      Int
+  balance     Int
+  type        CreditType
+  reason      String?
+  createdAt   DateTime   @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model Plan {
+  id             String   @id @default(cuid())
+  code           PlanCode @unique
+  name           String
+  monthlyPrice   Int      @default(0)
+  initialCredits Int      @default(0)
+  monthlyCredits Int      @default(0)
+  maxMembers     Int      @default(0)
+  maxDocuments   Int      @default(0)
+  features       String[] @default([])
+  createdAt      DateTime @default(now())
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  workspaceId        String    @unique
+  planId             String
+  status             String    @default("ACTIVE")
+  currentPeriodStart DateTime  @default(now())
+  currentPeriodEnd   DateTime?
+  createdAt          DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  plan      Plan      @relation(fields: [planId], references: [id])
+}
