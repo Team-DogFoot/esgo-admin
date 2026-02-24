@@ -1,48 +1,153 @@
-# ESGo Admin
+# ESGo Admin - K-ESG 멀티 리전 통합 관리 플랫폼
 
-ESGo 멀티 리전 통합 관리 플랫폼. K-ESG 서비스의 워크스페이스, 사용자, 크레딧, 구독을 리전별로 모니터링하고 관리한다.
+K-ESG 서비스([ESGo](https://github.com/Team-DogFoot/ESGo))의 워크스페이스, 사용자, 크레딧, 구독을 리전별로 모니터링하고 관리하는 어드민 플랫폼.
 
-## 주요 기능
+---
 
-- **리전별 대시보드** — 워크스페이스 수, 활성 사용자, 크레딧 소비, 문서 수, 플랜 분포, ESG 완료율
-- **워크스페이스 관리** — 목록 조회, 상세 정보, 크레딧 수동 조정(지급/차감), 구독 플랜 변경
-- **사용자 관리** — 전체 사용자 목록, 소속 워크스페이스 확인
-- **AI 서비스 모니터링** — 파이프라인 사용 현황 (준비 중)
-- **멀티 리전** — 리전별 독립 DB 연결, 사이드바 리전 선택기로 전환
+## 프로젝트 개요
+
+ESGo Admin은 K-ESG 플랫폼의 운영 관리를 위한 내부 도구다. 자체 DB 없이 K-ESG 리전 DB에 직접 접근하여 데이터를 조회·관리한다. `ADMIN_EMAILS` 화이트리스트로 접근을 제어하며, 리전별 독립 DB 연결을 지원한다.
+
+### 핵심 기능
+
+- **리전별 대시보드**: 워크스페이스 수, 활성 사용자, 크레딧 소비, 문서 수, 플랜 분포, ESG 완료율
+- **워크스페이스 관리**: 목록 조회, 상세 정보, 크레딧 수동 조정(지급/차감), 구독 플랜 변경
+- **사용자 관리**: 전체 사용자 목록, 소속 워크스페이스 확인
+- **AI 서비스 모니터링**: 파이프라인 사용 현황 (준비 중)
+- **멀티 리전**: 리전별 독립 DB 연결, 사이드바 리전 선택기로 전환
+- **구조화 로깅**: Pino 기반 JSON 로그 (K8s 호환)
+
+---
 
 ## 기술 스택
 
 | 영역 | 기술 |
 |------|------|
-| 프레임워크 | Next.js 16 (App Router) |
-| UI | React 19, Tailwind 4, shadcn/ui (new-york) |
+| Framework | Next.js 16 (App Router, Turbopack) |
+| UI | React 19, Tailwind CSS 4, Radix UI, shadcn/ui |
+| 인증 | NextAuth v5 (Auth.js), Google OAuth, JWT, ADMIN_EMAILS 가드 |
 | ORM | Prisma 7 (PostgreSQL, PrismaPg adapter) |
-| 인증 | NextAuth v5 (Google OAuth, JWT 세션, ADMIN_EMAILS 가드) |
-| 검증 | Zod 4 |
-| 로깅 | Pino |
-| 언어 | TypeScript strict |
+| 로깅 | Pino (JSON prod / pino-pretty dev) |
+| 검증 | Zod 4, TypeScript 5 strict |
+| 배포 | Docker, GHCR, K8s (ArgoCD GitOps) |
 
-## 시작하기
+---
+
+## 프로젝트 구조
+
+```
+src/
+├── proxy.ts                    # 인증 미들웨어 (NextAuth, ADMIN_EMAILS 체크)
+├── actions/                    # Server Actions (도메인별 폴더, 함수당 1파일)
+│   ├── dashboard/              #   리전별 대시보드 통계
+│   │   └── get-region-stats.ts
+│   ├── user/                   #   사용자 조회
+│   │   └── get-users.ts
+│   └── workspace/              #   워크스페이스 관리
+│       ├── get-workspaces.ts
+│       ├── get-workspace-detail.ts
+│       ├── adjust-credit.ts    #     크레딧 수동 조정
+│       └── change-plan.ts      #     구독 플랜 변경
+├── app/
+│   ├── (admin)/                # 관리자 레이아웃 (인증 필수)
+│   │   ├── page.tsx            #   홈 — 리전 선택
+│   │   └── [region]/           #   리전별 라우트
+│   │       ├── page.tsx        #     대시보드
+│   │       ├── users/          #     사용자 목록
+│   │       ├── workspaces/     #     워크스페이스 목록
+│   │       │   └── [id]/       #       워크스페이스 상세
+│   │       └── ai-monitor/     #     AI 서비스 모니터링
+│   ├── (auth)/login/           # 로그인 페이지
+│   └── api/auth/               # NextAuth API 라우트
+├── components/
+│   ├── layout/                 # admin-sidebar, region-selector, user-menu
+│   ├── dashboard/              # stat-card, plan-distribution
+│   ├── user/                   # user-table
+│   ├── workspace/              # workspace-table, workspace-detail, credit-adjust-form, plan-change-form, member-list
+│   └── ui/                     # shadcn/ui 공통 컴포넌트
+├── lib/
+│   ├── env.ts                  # 환경변수 Zod 검증
+│   ├── auth.ts                 # NextAuth 인스턴스
+│   ├── auth.config.ts          # NextAuth 설정 (Google, JWT, ADMIN_EMAILS 가드)
+│   ├── prisma.ts               # 리전별 PrismaClient 팩토리 (캐시)
+│   ├── regions.ts              # 리전 설정 (REGIONS 환경 변수 파싱)
+│   ├── logger.ts               # Pino 로거 싱글턴
+│   ├── action.ts               # ActionResult<T>, ok(), fail()
+│   └── utils.ts                # cn() (Tailwind 클래스 병합)
+├── types/
+│   └── next-auth.d.ts          # NextAuth 세션 타입 확장
+prisma/
+  kr/                           # 한국 리전
+    schema.prisma               #   K-ESG DB 스키마 (db pull로 동기화)
+    prisma.config.ts            #   Prisma 설정 (DATABASE_URL_KR)
+```
+
+---
+
+## 데이터 모델
+
+자체 DB가 없으며, K-ESG 리전 DB에 직접 접근한다. 스키마는 `prisma db pull`로 동기화한다.
+
+```
+User ──< WorkspaceMember >── Workspace ──< Document
+                                  │    ├──< EsgSummary
+                                  │    ├──< CreditLedger
+                                  │    ├──< Subscription ──< Plan
+                                  │    └──< Payment
+```
+
+### 주요 모델 (어드민에서 조회·관리)
+
+| 모델 | 설명 |
+|------|------|
+| `User` | NextAuth 사용자 (Google OAuth) |
+| `Workspace` | 기업/조직 단위 테넌트 (creditBalance, planCode) |
+| `WorkspaceMember` | 사용자-워크스페이스 관계 (OWNER/VIEWER) |
+| `Document` | 업로드 문서 (상태 추적) |
+| `EsgSummary` | 항목별 요약 (NOT_STARTED/IN_PROGRESS/COMPLETED) |
+| `CreditLedger` | 크레딧 거래 이력 (차감/충전/환불) |
+| `Plan` | 플랜 정의 (FREE/PRO) |
+| `Subscription` | 워크스페이스 구독 (1:1) |
+
+---
+
+## 로컬 개발 환경 설정
 
 ### 사전 요구사항
 
-- Node.js 20+
-- K-ESG 리전 DB 접근 가능한 PostgreSQL URL
+- Node.js 24+
+- Docker (PostgreSQL용)
 
-### 설치
+### 1. 통합 개발 환경 (권장)
+
+ESGo 프로젝트는 `esgo/` 상위 폴더에서 Docker Compose로 PostgreSQL + Platform + Admin을 통합 관리한다.
 
 ```bash
-git clone https://github.com/Team-DogFoot/esgo-admin.git
+# esgo/ 상위 폴더에서
+docker compose up -d postgres          # PostgreSQL만 기동 (포트 5433)
+
+# 또는 전체 dev 환경 (Docker 내부에서 실행)
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+통합 dev 환경에서는 admin 컨테이너가 시작할 때 자동으로:
+1. `prisma db pull` — Platform이 push한 최신 스키마를 가져옴
+2. `prisma generate` — Prisma Client 생성
+3. `next dev` — 개발 서버 시작 (포트 3001)
+
+### 2. 단독 실행
+
+```bash
 cd esgo-admin
 npm install
 ```
 
-### 환경 변수
+#### 환경 변수
 
-`.env.example`을 `.env.local`로 복사하고 값을 채운다.
+`.env.example`을 `.env`로 복사하고 값을 채운다.
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
 | 변수 | 설명 | 예시 |
@@ -51,80 +156,38 @@ cp .env.example .env.local
 | `AUTH_TRUST_HOST` | 프록시 환경 신뢰 | `true` |
 | `AUTH_GOOGLE_ID` | Google OAuth Client ID | |
 | `AUTH_GOOGLE_SECRET` | Google OAuth Client Secret | |
-| `ADMIN_EMAILS` | 허용 관리자 이메일 (콤마 구분) | `admin@example.com,dev@example.com` |
+| `ADMIN_EMAILS` | 허용 관리자 이메일 (콤마 구분) | `admin@example.com` |
 | `REGIONS` | 리전 설정 JSON 배열 | `[{"id":"kr","name":"한국","domain":"k-esg.esgohq.com","flag":"🇰🇷"}]` |
 | `DATABASE_URL_KR` | 한국 리전 DB URL | `postgresql://user:pass@host:5432/db` |
 | `LOG_LEVEL` | 로그 레벨 | `info` |
 
-### Prisma 클라이언트 생성
+#### Prisma 클라이언트 생성
 
 ```bash
-npm run db:generate:kr
+npm run db:pull:kr        # K-ESG DB에서 스키마 동기화
+npm run db:generate:kr    # Prisma Client 생성
 ```
 
-> K-ESG 프로덕션 DB에서 스키마를 동기화하려면 `npm run db:pull:kr`을 먼저 실행한다.
-
-### 개발 서버
+#### 개발 서버
 
 ```bash
-npm run dev
+npm run dev               # http://localhost:3000
 ```
 
-`http://localhost:3000`에서 접속. `ADMIN_EMAILS`에 등록된 Google 계정으로 로그인한다.
+`ADMIN_EMAILS`에 등록된 Google 계정으로 로그인한다.
 
-## 스크립트
+### 유용한 스크립트
 
-| 명령어 | 설명 |
-|--------|------|
-| `npm run dev` | Next.js 개발 서버 |
-| `npm run build` | 프로덕션 빌드 |
-| `npm run start` | 프로덕션 서버 |
-| `npm run lint` | ESLint |
-| `npm run db:pull:kr` | 한국 리전 DB에서 Prisma 스키마 동기화 |
-| `npm run db:generate:kr` | 한국 리전 Prisma 클라이언트 생성 |
-
-## 프로젝트 구조
-
+```bash
+npm run dev              # Next.js 개발 서버
+npm run build            # 프로덕션 빌드
+npm run start            # 프로덕션 서버
+npm run lint             # ESLint
+npm run db:pull:kr       # 한국 리전 DB에서 Prisma 스키마 동기화
+npm run db:generate:kr   # 한국 리전 Prisma 클라이언트 생성
 ```
-src/
-  proxy.ts              인증 미들웨어 (NextAuth)
-  actions/              Server Actions
-    dashboard/          get-region-stats
-    user/               get-users
-    workspace/          get-workspaces, get-workspace-detail, adjust-credit, change-plan
-  app/
-    (admin)/            관리자 페이지 (인증 필수)
-      page.tsx          홈 — 리전 선택
-      [region]/         리전별 라우트
-        page.tsx        대시보드
-        users/          사용자 목록
-        workspaces/     워크스페이스 목록
-          [id]/         워크스페이스 상세
-        ai-monitor/     AI 서비스 모니터링
-    (auth)/login/       로그인 페이지
-    api/auth/           NextAuth API 라우트
-  components/
-    layout/             admin-sidebar, region-selector, user-menu
-    dashboard/          stat-card, plan-distribution
-    user/               user-table
-    workspace/          workspace-table, workspace-detail, credit-adjust-form, plan-change-form, member-list
-    ui/                 shadcn/ui 컴포넌트
-  lib/
-    auth.ts             NextAuth 인스턴스
-    auth.config.ts      NextAuth 설정 (Google, JWT, ADMIN_EMAILS 가드)
-    prisma.ts           리전별 PrismaClient 팩토리
-    regions.ts          리전 설정 (REGIONS 환경 변수 파싱)
-    env.ts              환경 변수 검증 (Zod)
-    logger.ts           Pino 로거 싱글턴
-    action.ts           ActionResult<T>, ok(), fail()
-    utils.ts            cn() (Tailwind 클래스 병합)
-  types/
-    next-auth.d.ts      세션 타입 확장
-prisma/
-  kr/                   한국 리전
-    schema.prisma       K-ESG DB 스키마 (db pull로 동기화)
-    prisma.config.ts    Prisma 설정 (DATABASE_URL_KR)
-```
+
+---
 
 ## 리전 추가하기
 
@@ -133,8 +196,7 @@ prisma/
 1. **환경 변수 추가**
 
 ```bash
-# .env.local
-REGIONS='[{"id":"kr","name":"한국","domain":"k-esg.esgohq.com","flag":"🇰🇷"},{"id":"jp","name":"일본","domain":"k-esg-jp.esgohq.com","flag":"🇯🇵"}]'
+REGIONS='[{"id":"kr",...},{"id":"jp","name":"일본","domain":"k-esg-jp.esgohq.com","flag":"🇯🇵"}]'
 DATABASE_URL_JP="postgresql://..."
 ```
 
@@ -156,27 +218,22 @@ mkdir prisma/jp
 }
 ```
 
-4. **Prisma 클라이언트 생성**
+4. **스키마 동기화 + 클라이언트 생성**
 
 ```bash
 npm run db:pull:jp
 npm run db:generate:jp
 ```
 
-5. **prisma.ts 수정** — 새 리전의 클라이언트 import를 추가하거나, 기존 스키마가 동일하면 그대로 사용.
+---
 
 ## 배포
 
 ### Docker
 
-```dockerfile
-FROM node:20-alpine AS base
-# ... (standalone output 빌드)
-```
-
 ```bash
 docker build -t esgo-admin .
-docker run -p 3000:3000 --env-file .env.local esgo-admin
+docker run -p 3000:3000 --env-file .env esgo-admin
 ```
 
 ### CI/CD
@@ -184,9 +241,23 @@ docker run -p 3000:3000 --env-file .env.local esgo-admin
 - GitHub Actions → Docker 빌드 → GHCR push → K8s 매니페스트 갱신 → ArgoCD 자동 배포
 - 이미지 레지스트리: `ghcr.io/team-dogfoot/esgo-admin`
 
+---
+
 ## 아키텍처 특징
 
-- **자체 DB 없음** — K-ESG 리전 DB에 읽기/쓰기 직접 접근. 어드민 전용 테이블 없음
-- **JWT 전용 인증** — DB adapter 미사용. Google OAuth + ADMIN_EMAILS 화이트리스트
-- **멀티 리전 Prisma** — 리전 ID로 PrismaClient를 캐시에서 조회. 리전별 독립 DB 연결
-- **Server-First** — 페이지는 Server Component, 인터랙션은 Client Component에 격리
+- **자체 DB 없음**: K-ESG 리전 DB에 읽기/쓰기 직접 접근. 어드민 전용 테이블 없음
+- **JWT 전용 인증**: DB adapter 미사용. Google OAuth + `ADMIN_EMAILS` 화이트리스트
+- **멀티 리전 Prisma**: 리전 ID로 PrismaClient를 캐시에서 조회. 리전별 독립 DB 연결
+- **스키마 동기화**: Platform이 `prisma db push`로 스키마 관리, Admin은 `prisma db pull`로 읽기 전용 동기화
+- **Server-First**: 페이지는 Server Component, 인터랙션은 Client Component에 격리
+
+### K-ESG Platform과의 관계
+
+| 항목 | K-ESG Platform | ESGo Admin |
+|------|----------------|------------|
+| DB | 자체 PostgreSQL (스키마 owner) | K-ESG 리전 DB 직접 접근 |
+| 인증 | NextAuth + DB adapter | JWT 전용 (DB adapter 없음) |
+| 접근 제어 | 워크스페이스 멤버십 | `ADMIN_EMAILS` 화이트리스트 |
+| Prisma | 단일 클라이언트, `db push` | 리전별 PrismaClient 팩토리, `db pull` |
+| 라우팅 | `/dashboard/*` | `/[region]/*` |
+| 포트 (개발) | 3000 | 3001 |
