@@ -1,6 +1,3 @@
-// This schema is managed via `prisma db pull` from the K-ESG production database.
-// Do NOT manually edit — run `npm run db:pull:kr` to sync.
-
 generator client {
   provider = "prisma-client-js"
   output   = "../../node_modules/.prisma/client-kr"
@@ -10,8 +7,1503 @@ datasource db {
   provider = "postgresql"
 }
 
-// Models will be populated by `prisma db pull`.
-// Placeholder models for type-checking until first db pull:
+model User {
+  id                String            @id @default(cuid())
+  name              String?
+  email             String?           @unique
+  emailVerified     DateTime?
+  image             String?
+  activeWorkspaceId String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  Account           Account[]
+  Document          Document[]
+  Report            Report[]
+  createdWorkspaces Workspace[]       @relation("createdWorkspaces")
+  memberships       WorkspaceMember[]
+}
+
+model Workspace {
+  id               String             @id @default(cuid())
+  name             String
+  businessNumber   String
+  createdById      String?
+  creditBalance    Int                @default(0)
+  planCode         PlanCode           @default(FREE)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  AggregationSet   AggregationSet[]
+  creditLedgers    CreditLedger[]
+  documents        Document[]
+  DocumentItemLink DocumentItemLink[]
+  EsgE101          EsgE101?
+  EsgE11           EsgE11?
+  EsgE111          EsgE111?
+  EsgE12           EsgE12?
+  EsgE21           EsgE21?
+  EsgE22           EsgE22?
+  EsgE31           EsgE31?
+  EsgE32           EsgE32?
+  EsgE33           EsgE33?
+  EsgE41           EsgE41?
+  EsgE42           EsgE42?
+  EsgE43           EsgE43?
+  EsgE51           EsgE51?
+  EsgE52           EsgE52?
+  EsgE53           EsgE53?
+  EsgE54           EsgE54?
+  EsgE55           EsgE55?
+  EsgE61           EsgE61?
+  EsgE62           EsgE62?
+  EsgE71           EsgE71?
+  EsgE72           EsgE72?
+  EsgE81           EsgE81?
+  EsgE91           EsgE91?
+  EsgE92           EsgE92?
+  EsgE93           EsgE93?
+  EsgG11           EsgG11?
+  EsgG12           EsgG12?
+  EsgG13           EsgG13?
+  EsgG21           EsgG21?
+  EsgG22           EsgG22?
+  EsgG23           EsgG23?
+  EsgG31           EsgG31?
+  EsgG32           EsgG32?
+  EsgG33           EsgG33?
+  EsgG41           EsgG41?
+  EsgG42           EsgG42?
+  EsgG43           EsgG43?
+  EsgG51           EsgG51?
+  EsgG52           EsgG52?
+  EsgG53           EsgG53?
+  EsgG54           EsgG54?
+  EsgG61           EsgG61?
+  EsgP11           EsgP11?
+  EsgP12           EsgP12?
+  EsgP21           EsgP21?
+  EsgP22           EsgP22?
+  EsgP31           EsgP31?
+  EsgS11           EsgS11?
+  EsgS12           EsgS12?
+  EsgS13           EsgS13?
+  EsgS21           EsgS21?
+  EsgS22           EsgS22?
+  EsgS23           EsgS23?
+  EsgS31           EsgS31?
+  EsgS32           EsgS32?
+  EsgS33           EsgS33?
+  EsgS41           EsgS41?
+  EsgS42           EsgS42?
+  EsgS43           EsgS43?
+  EsgS51           EsgS51?
+  EsgS52           EsgS52?
+  EsgS53           EsgS53?
+  EsgS61           EsgS61?
+  EsgS62           EsgS62?
+  EsgS71           EsgS71?
+  EsgS72           EsgS72?
+  EsgS81           EsgS81?
+  EsgS82           EsgS82?
+  EsgS91           EsgS91?
+  esgSummaries     EsgSummary[]
+  Invitation       Invitation[]
+  Payment          Payment[]
+  PipelineSession  PipelineSession[]
+  Report           Report[]
+  subscription     Subscription?
+  createdBy        User?              @relation("createdWorkspaces", fields: [createdById], references: [id])
+  members          WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        Role      @default(VIEWER)
+  joinedAt    DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model Document {
+  id                     String                   @id @default(cuid())
+  workspaceId            String
+  uploaderId             String
+  fileName               String
+  displayName            String?
+  s3Key                  String
+  s3Url                  String
+  size                   BigInt
+  contentType            String?
+  status                 DocumentStatus           @default(UPLOADED)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  AggregationSetDocument AggregationSetDocument[]
+  User                   User                     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  workspace              Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  DocumentItemLink       DocumentItemLink[]
+  EsgSummary             EsgSummary[]
+  PipelineSession        PipelineSession[]
+}
+
+model EsgSummary {
+  id                String          @id @default(cuid())
+  workspaceId       String
+  esgItemCode       String
+  status            EsgAnswerStatus @default(NOT_STARTED)
+  locked            Boolean         @default(false)
+  summary           String?
+  source            DataSource?
+  documentId        String?
+  pipelinePhase     PipelinePhase?
+  sourceDocumentIds Json?
+  mergeStrategy     String?
+  fieldSources      Json?
+  filledFields      Int             @default(0)
+  totalFields       Int             @default(0)
+  completionRate    Int             @default(0)
+  updatedAt         DateTime        @updatedAt
+  createdAt         DateTime        @default(now())
+  Document          Document?       @relation(fields: [documentId], references: [id])
+  workspace         Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, esgItemCode])
+}
+
+model CreditLedger {
+  id          String     @id @default(cuid())
+  workspaceId String
+  amount      Int
+  balance     Int
+  type        CreditType
+  reason      String
+  referenceId String?
+  createdAt   DateTime   @default(now())
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+model Plan {
+  id             String         @id @default(cuid())
+  code           PlanCode       @unique
+  name           String
+  monthlyPrice   Int
+  initialCredits Int
+  monthlyCredits Int
+  features       Json           @default("[]")
+  maxMembers     Int            @default(0)
+  maxDocuments   Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime
+  subscriptions  Subscription[]
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  workspaceId           String             @unique
+  planId                String
+  status                SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  portoneSubscriptionId String?
+  portoneBillingKey     String?
+  canceledAt            DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime
+  plan                  Plan               @relation(fields: [planId], references: [id])
+  workspace             Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model AggregationSet {
+  id                     String                   @id
+  workspaceId            String
+  esgItemCode            String
+  name                   String
+  period                 String
+  status                 AggregationSetStatus     @default(DRAFT)
+  result                 Json?
+  errorMessage           String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  Workspace              Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  AggregationSetDocument AggregationSetDocument[]
+
+  @@unique([workspaceId, esgItemCode, period])
+  @@index([workspaceId])
+}
+
+model AggregationSetDocument {
+  id               String         @id
+  aggregationSetId String
+  documentId       String
+  documentType     String
+  label            String?
+  included         Boolean        @default(true)
+  extractedValue   Json?
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+  AggregationSet   AggregationSet @relation(fields: [aggregationSetId], references: [id], onDelete: Cascade)
+  Document         Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([aggregationSetId, documentId])
+  @@index([aggregationSetId])
+}
+
+model DocumentItemLink {
+  id          String         @id
+  workspaceId String
+  documentId  String
+  esgItemCode String
+  source      DataSource
+  summary     String?
+  data        Json?
+  phase       PipelinePhase?
+  createdAt   DateTime       @default(now())
+  Document    Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  Workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, documentId, esgItemCode])
+  @@index([workspaceId, esgItemCode])
+}
+
+model EsgE101 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasProducts      Boolean?
+  certifications   Json?
+  productNames     Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE11 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasStrategy      Boolean?
+  strategyDetails  String?
+  midTermGoals     Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE111 {
+  id                 String    @id
+  workspaceId        String    @unique
+  hasPolicy          Boolean?
+  policyDetails      String?
+  greenPurchaseRatio Float?
+  summary            String?
+  evidence           Json?
+  validationErrors   Json?
+  documentId         String?
+  extractedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime
+  Workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE12 {
+  id                 String    @id
+  workspaceId        String    @unique
+  hasPerformanceMgmt Boolean?
+  targetVsActual     String?
+  improvementPlan    String?
+  summary            String?
+  evidence           Json?
+  validationErrors   Json?
+  documentId         String?
+  extractedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime
+  Workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE21 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasCertification Boolean?
+  certType         String?
+  certDate         String?
+  certScope        String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE22 {
+  id               String    @id
+  workspaceId      String    @unique
+  isCompliant      Boolean?
+  violationCount   Int?
+  violationDetails String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE31 {
+  id               String    @id
+  workspaceId      String    @unique
+  totalUsage       Float?
+  electricityUsage Float?
+  fuelUsage        Float?
+  yearOverYear     String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE32 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasProgram       Boolean?
+  investmentAmount Float?
+  savingsAmount    Float?
+  activities       Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE33 {
+  id               String    @id
+  workspaceId      String    @unique
+  renewableRatio   Float?
+  renewableTypes   Json?
+  expansionPlan    String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE41 {
+  id               String    @id
+  workspaceId      String    @unique
+  scope1           Float?
+  scope2           Float?
+  total            Float?
+  yearOverYear     String?
+  verified         Boolean?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE42 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasTarget        Boolean?
+  targetYear       Int?
+  targetReduction  String?
+  baseYear         Int?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE43 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasActivities    Boolean?
+  activities       Json?
+  reductionAmount  Float?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE51 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasAssessment    Boolean?
+  risks            Json?
+  opportunities    Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE52 {
+  id                 String    @id
+  workspaceId        String    @unique
+  hasStrategy        Boolean?
+  strategyDetails    String?
+  implementationPlan String?
+  summary            String?
+  evidence           Json?
+  validationErrors   Json?
+  documentId         String?
+  extractedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime
+  Workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE53 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasAnalysis      Boolean?
+  framework        String?
+  scenarios        Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE54 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasNetZeroTarget Boolean?
+  targetYear       Int?
+  roadmap          String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE55 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasScope3        Boolean?
+  scope3Total      Float?
+  categories       Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE61 {
+  id               String    @id
+  workspaceId      String    @unique
+  totalUsage       Float?
+  yearOverYear     String?
+  reductionTarget  String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE62 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasManagement    Boolean?
+  dischargeAmount  Float?
+  treatmentMethod  String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE71 {
+  id                  String    @id
+  workspaceId         String    @unique
+  totalWaste          Float?
+  yearOverYear        String?
+  reductionActivities Json?
+  summary             String?
+  evidence            Json?
+  validationErrors    Json?
+  documentId          String?
+  extractedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime
+  Workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE72 {
+  id               String    @id
+  workspaceId      String    @unique
+  recyclingRate    Float?
+  circularEconomy  String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE81 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasMonitoring    Boolean?
+  pollutants       Json?
+  reductionAmount  String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE91 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasAssessment    Boolean?
+  impactAreas      Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE92 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasProgram       Boolean?
+  programs         Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgE93 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasAssessment    Boolean?
+  dependencies     Json?
+  risks            Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG11 {
+  id                String    @id
+  workspaceId       String    @unique
+  boardSize         Int?
+  independenceRatio Float?
+  expertiseAreas    Json?
+  summary           String?
+  evidence          Json?
+  validationErrors  Json?
+  documentId        String?
+  extractedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  Workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG12 {
+  id               String    @id
+  workspaceId      String    @unique
+  femaleRatio      Float?
+  diversityMetrics Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG13 {
+  id                   String    @id
+  workspaceId          String    @unique
+  outsideDirectorCount Int?
+  outsideDirectorRatio Float?
+  isAdequate           Boolean?
+  summary              String?
+  evidence             Json?
+  validationErrors     Json?
+  documentId           String?
+  extractedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+  Workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG21 {
+  id               String    @id
+  workspaceId      String    @unique
+  meetingCount     Int?
+  isRegular        Boolean?
+  attendanceRate   Float?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG22 {
+  id                String    @id
+  workspaceId       String    @unique
+  committees        Json?
+  hasAuditCommittee Boolean?
+  hasEsgCommittee   Boolean?
+  summary           String?
+  evidence          Json?
+  validationErrors  Json?
+  documentId        String?
+  extractedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  Workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG23 {
+  id                  String    @id
+  workspaceId         String    @unique
+  isPerformanceBased  Boolean?
+  compensationDetails String?
+  summary             String?
+  evidence            Json?
+  validationErrors    Json?
+  documentId          String?
+  extractedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime
+  Workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG31 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  policyDetails    String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG32 {
+  id               String    @id
+  workspaceId      String    @unique
+  isTransparent    Boolean?
+  votingMethods    Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG33 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  dividendRatio    Float?
+  isPublic         Boolean?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG41 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasFunction      Boolean?
+  isIndependent    Boolean?
+  auditScope       String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG42 {
+  id               String    @id
+  workspaceId      String    @unique
+  isIndependent    Boolean?
+  auditorName      String?
+  rotationPolicy   String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG43 {
+  id                  String    @id
+  workspaceId         String    @unique
+  hasSystem           Boolean?
+  systemDetails       String?
+  effectivenessReview Boolean?
+  summary             String?
+  evidence            Json?
+  validationErrors    Json?
+  documentId          String?
+  extractedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime
+  Workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG51 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasCode          Boolean?
+  codeName         String?
+  isPublic         Boolean?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG52 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  policyDetails    String?
+  trainingProvided Boolean?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG53 {
+  id                      String    @id
+  workspaceId             String    @unique
+  hasChannel              Boolean?
+  channelType             String?
+  whistleblowerProtection Boolean?
+  reportCount             Int?
+  summary                 String?
+  evidence                Json?
+  validationErrors        Json?
+  documentId              String?
+  extractedAt             DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime
+  Workspace               Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG54 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  isCompliant      Boolean?
+  violationHistory String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgG61 {
+  id                String    @id
+  workspaceId       String    @unique
+  isIntegrated      Boolean?
+  riskCategories    Json?
+  managementProcess String?
+  summary           String?
+  evidence          Json?
+  validationErrors  Json?
+  documentId        String?
+  extractedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  Workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgP11 {
+  id               String    @id
+  workspaceId      String    @unique
+  disclosureMethod String?
+  hasReport        Boolean?
+  channels         Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgP12 {
+  id               String    @id
+  workspaceId      String    @unique
+  frequency        String?
+  isRegular        Boolean?
+  lastPublished    String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgP21 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasKpi           Boolean?
+  kpiList          Json?
+  materialIssues   Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgP22 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasStrategy      Boolean?
+  strategyScope    String?
+  goals            Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgP31 {
+  id                String    @id
+  workspaceId       String    @unique
+  hasVerification   Boolean?
+  verifier          String?
+  verificationScope String?
+  summary           String?
+  evidence          Json?
+  validationErrors  Json?
+  documentId        String?
+  extractedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  Workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS11 {
+  id                String    @id
+  workspaceId       String    @unique
+  hasPolicy         Boolean?
+  policyDetails     String?
+  fairHiringProcess String?
+  summary           String?
+  evidence          Json?
+  validationErrors  Json?
+  documentId        String?
+  extractedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  Workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS12 {
+  id                  String    @id
+  workspaceId         String    @unique
+  avgWorkHours        Float?
+  hasCompensation     Boolean?
+  compensationDetails String?
+  summary             String?
+  evidence            Json?
+  validationErrors    Json?
+  documentId          String?
+  extractedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime
+  Workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS13 {
+  id                   String    @id
+  workspaceId          String    @unique
+  hasUnion             Boolean?
+  unionRate            Float?
+  collectiveBargaining Boolean?
+  summary              String?
+  evidence             Json?
+  validationErrors     Json?
+  documentId           String?
+  extractedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+  Workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS21 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  policyScope      String?
+  diversityMetrics Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS22 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  policyDetails    String?
+  incidentCount    Int?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS23 {
+  id               String    @id
+  workspaceId      String    @unique
+  employmentRate   Float?
+  meetsQuota       Boolean?
+  supportPrograms  Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS31 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasSystem        Boolean?
+  certType         String?
+  certDate         String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS32 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasProgram       Boolean?
+  accidentRate     Float?
+  programs         Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS33 {
+  id                String    @id
+  workspaceId       String    @unique
+  hasProgram        Boolean?
+  programs          Json?
+  participationRate Float?
+  summary           String?
+  evidence          Json?
+  validationErrors  Json?
+  documentId        String?
+  extractedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  Workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS41 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  policyName       String?
+  isPublic         Boolean?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS42 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasDueDiligence  Boolean?
+  frequency        String?
+  scope            String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS43 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  policyDetails    String?
+  monitoringMethod String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS51 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasAssessment    Boolean?
+  assessmentScope  String?
+  riskItems        Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS52 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasCode          Boolean?
+  codeDetails      String?
+  applicationScope String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS53 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasProgram       Boolean?
+  programs         Json?
+  beneficiaryCount Int?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS61 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasProgram       Boolean?
+  programs         Json?
+  investmentAmount Float?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS62 {
+  id               String    @id
+  workspaceId      String    @unique
+  localHiringRate  Float?
+  contributions    Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS71 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasPolicy        Boolean?
+  policyDetails    String?
+  incidentCount    Int?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS72 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasSystem        Boolean?
+  certType         String?
+  certDate         String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS81 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasSystem        Boolean?
+  safetyStandards  Json?
+  recallHistory    String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS82 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasSystem        Boolean?
+  complaintCount   Int?
+  responseRate     Float?
+  feedbackProcess  String?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgS91 {
+  id               String    @id
+  workspaceId      String    @unique
+  hasProgram       Boolean?
+  trainingHours    Float?
+  programs         Json?
+  investmentAmount Float?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Invitation {
+  id          String    @id
+  email       String
+  workspaceId String
+  role        Role      @default(VIEWER)
+  token       String    @unique
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([email, workspaceId])
+}
+
+model Payment {
+  id               String        @id
+  workspaceId      String
+  type             PaymentType
+  amount           Int
+  credits          Int?
+  status           PaymentStatus @default(PENDING)
+  portonePaymentId String?       @unique
+  receiptUrl       String?
+  failReason       String?
+  paidAt           DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+model PipelineSession {
+  id           String        @id
+  workspaceId  String
+  documentId   String
+  sessionId    String        @unique
+  currentPhase PipelinePhase
+  autoMode     Boolean       @default(false)
+  state        Json?
+  errorCount   Int           @default(0)
+  lastError    String?
+  durationMs   Int?
+  startedAt    DateTime      @default(now())
+  completedAt  DateTime?
+  Document     Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  Workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id          String    @id
+  workspaceId String
+  title       String
+  data        Json
+  createdById String
+  generatedAt DateTime  @default(now())
+  User        User      @relation(fields: [createdById], references: [id])
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, generatedAt(sort: Desc)])
+}
+
+model mcp_oauth_clients {
+  id                      String             @id
+  clientId                String             @unique
+  clientSecret            String?
+  clientSecretExpiresAt   Int?
+  clientIdIssuedAt        Int
+  redirectUris            Json
+  clientName              String?
+  tokenEndpointAuthMethod String?
+  grantTypes              Json?
+  responseTypes           Json?
+  createdAt               DateTime           @default(now())
+  mcp_oauth_codes         mcp_oauth_codes[]
+  mcp_oauth_tokens        mcp_oauth_tokens[]
+}
+
+model mcp_oauth_codes {
+  id                  String            @id
+  code                String            @unique
+  clientId            String
+  userId              String
+  workspaceId         String
+  redirectUri         String
+  codeChallenge       String
+  codeChallengeMethod String            @default("S256")
+  scopes              Json
+  expiresAt           DateTime
+  used                Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  mcp_oauth_clients   mcp_oauth_clients @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model mcp_oauth_tokens {
+  id                String            @id
+  tokenHash         String            @unique
+  refreshHash       String?           @unique
+  clientId          String
+  userId            String
+  workspaceId       String
+  scopes            Json
+  expiresAt         DateTime
+  refreshExpiresAt  DateTime?
+  revoked           Boolean           @default(false)
+  lastUsedAt        DateTime?
+  createdAt         DateTime          @default(now())
+  mcp_oauth_clients mcp_oauth_clients @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([userId, workspaceId])
+}
 
 enum PlanCode {
   FREE
@@ -40,115 +1532,46 @@ enum DocumentStatus {
   ANALYZED
 }
 
-enum EsgStatus {
+enum AggregationSetStatus {
+  DRAFT
+  CALCULATING
+  COMPLETED
+  ERROR
+}
+
+enum DataSource {
+  AI
+  MANUAL
+}
+
+enum EsgAnswerStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
 }
 
-model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String?  @unique
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  memberships       WorkspaceMember[]
-  createdWorkspaces Workspace[]       @relation("createdWorkspaces")
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELED
 }
 
-model Workspace {
-  id             String   @id @default(cuid())
-  name           String
-  businessNumber String
-  creditBalance  Int      @default(0)
-  planCode       PlanCode @default(FREE)
-  createdById    String?
-  createdBy      User?    @relation("createdWorkspaces", fields: [createdById], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  members       WorkspaceMember[]
-  documents     Document[]
-  esgSummaries  EsgSummary[]
-  creditLedgers CreditLedger[]
-  subscription  Subscription?
+enum PaymentType {
+  SUBSCRIPTION
+  CREDIT_PURCHASE
 }
 
-model WorkspaceMember {
-  id          String   @id @default(cuid())
-  userId      String
-  workspaceId String
-  role        Role     @default(VIEWER)
-  joinedAt    DateTime @default(now())
-
-  user      User      @relation(fields: [userId], references: [id])
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-
-  @@unique([userId, workspaceId])
+enum PipelinePhase {
+  PREPROCESSED
+  CLASSIFIED
+  EXTRACTED
 }
 
-model Document {
-  id          String         @id @default(cuid())
-  workspaceId String
-  fileName    String
-  status      DocumentStatus @default(UPLOADED)
-  createdAt   DateTime       @default(now())
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-}
-
-model EsgSummary {
-  id          String    @id @default(cuid())
-  workspaceId String
-  esgItemCode String
-  status      EsgStatus @default(NOT_STARTED)
-  summary     String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-
-  @@unique([workspaceId, esgItemCode])
-}
-
-model CreditLedger {
-  id          String     @id @default(cuid())
-  workspaceId String
-  amount      Int
-  balance     Int
-  type        CreditType
-  reason      String?
-  createdAt   DateTime   @default(now())
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-}
-
-model Plan {
-  id             String   @id @default(cuid())
-  code           PlanCode @unique
-  name           String
-  monthlyPrice   Int      @default(0)
-  initialCredits Int      @default(0)
-  monthlyCredits Int      @default(0)
-  maxMembers     Int      @default(0)
-  maxDocuments   Int      @default(0)
-  features       String[] @default([])
-  createdAt      DateTime @default(now())
-
-  subscriptions Subscription[]
-}
-
-model Subscription {
-  id                 String    @id @default(cuid())
-  workspaceId        String    @unique
-  planId             String
-  status             String    @default("ACTIVE")
-  currentPeriodStart DateTime  @default(now())
-  currentPeriodEnd   DateTime?
-  createdAt          DateTime  @default(now())
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  plan      Plan      @relation(fields: [planId], references: [id])
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
 }
