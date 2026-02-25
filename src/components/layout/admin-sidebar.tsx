@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Building2, Users, Activity, Home } from "lucide-react";
+import { BarChart3, Building2, Users, Activity, Home, CreditCard } from "lucide-react";
 import { regions } from "@/lib/regions";
 import { RegionSelector } from "@/components/layout/region-selector";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { label: "대시보드", href: "", icon: BarChart3 },
   { label: "워크스페이스", href: "/workspaces", icon: Building2 },
   { label: "사용자", href: "/users", icon: Users },
+  { label: "빌링", href: "/billing", icon: CreditCard },
   { label: "AI 모니터", href: "/ai-monitor", icon: Activity },
 ];
 
