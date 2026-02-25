@@ -12,6 +12,8 @@ export interface UserListItem {
   name: string | null;
   email: string | null;
   workspaces: { name: string; role: string }[];
+  workspaceCount: number;
+  createdAt: Date;
   updatedAt: Date;
 }
 
@@ -43,6 +45,9 @@ export async function getUsers(input: GetUsersInput): Promise<ActionResult<UserL
         memberships: {
           include: { workspace: { select: { name: true } } },
         },
+        _count: {
+          select: { memberships: true },
+        },
       },
       orderBy: { updatedAt: "desc" },
       take: 100,
@@ -56,6 +61,8 @@ export async function getUsers(input: GetUsersInput): Promise<ActionResult<UserL
         name: m.workspace.name,
         role: m.role,
       })),
+      workspaceCount: u._count.memberships,
+      createdAt: u.createdAt,
       updatedAt: u.updatedAt,
     }));
 
