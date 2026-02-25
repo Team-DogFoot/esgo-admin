@@ -17,6 +17,7 @@ interface DocumentsPageProps {
 }
 
 const STATUS_OPTIONS = [
+  { label: "전체 상태", value: "ALL" },
   { label: "업로드", value: "UPLOADED" },
   { label: "전처리 완료", value: "PREPROCESSED" },
   { label: "분류 완료", value: "CLASSIFIED" },
@@ -25,11 +26,13 @@ const STATUS_OPTIONS = [
 ];
 
 const PIPELINE_OPTIONS = [
+  { label: "전체", value: "ALL" },
   { label: "파이프라인 있음", value: "true" },
   { label: "파이프라인 없음", value: "false" },
 ];
 
 const DATE_RANGE_OPTIONS = [
+  { label: "전체 기간", value: "ALL" },
   { label: "이번 달", value: "this_month" },
   { label: "지난 달", value: "last_month" },
   { label: "최근 3개월", value: "3_months" },

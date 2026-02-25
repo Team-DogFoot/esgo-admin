@@ -15,6 +15,7 @@ interface ReportsPageProps {
 }
 
 const DATE_RANGE_OPTIONS = [
+  { label: "전체 기간", value: "ALL" },
   { label: "이번 달", value: "this_month" },
   { label: "지난 달", value: "last_month" },
   { label: "최근 3개월", value: "3_months" },
