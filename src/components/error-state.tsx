@@ -10,7 +10,7 @@ interface ErrorStateProps {
   reset: () => void;
   title: string;
   description: string;
-  /** Where the "홈으로" button navigates. Defaults to "/dashboard" */
+  /** Where the "홈으로" button navigates. Defaults to "/" (region selector) */
   homePath?: string;
 }
 
@@ -19,7 +19,7 @@ export function ErrorState({
   reset,
   title,
   description,
-  homePath = "/dashboard",
+  homePath = "/",
 }: ErrorStateProps) {
   useEffect(() => {
     // Client-side error boundaries can't use Pino (server-only).
