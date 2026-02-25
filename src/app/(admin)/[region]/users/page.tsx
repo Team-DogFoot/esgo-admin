@@ -25,7 +25,7 @@ export default async function UsersPage({ params, searchParams }: UsersPageProps
         </p>
       </div>
       {result.success ? (
-        <UserTable users={result.data} />
+        <UserTable users={result.data} regionId={regionId} />
       ) : (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {result.error}
