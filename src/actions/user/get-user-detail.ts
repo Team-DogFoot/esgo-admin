@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-user-detail" });
+import { ValidationError, NotFoundError } from "@/lib/errors";
 
 export interface UserDetail {
   id: string;
@@ -31,17 +29,14 @@ export interface UserDetail {
   };
 }
 
-export async function getUserDetail(
-  regionId: string,
-  userId: string,
-): Promise<ActionResult<UserDetail>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getUserDetail = createAction(
+  { module: "get-user-detail" },
+  async (_session, regionId: string, userId: string): Promise<UserDetail> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, userId }, "getUserDetail started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -59,7 +54,7 @@ export async function getUserDetail(
       },
     });
 
-    if (!user) return fail("사용자를 찾을 수 없습니다.");
+    if (!user) throw new NotFoundError("사용자");
 
     let activeWorkspaceName: string | null = null;
     if (user.activeWorkspaceId) {
@@ -72,7 +67,7 @@ export async function getUserDetail(
 
     const workspacesOwned = user.memberships.filter((m) => m.role === "OWNER").length;
 
-    const detail: UserDetail = {
+    return {
       id: user.id,
       name: user.name,
       email: user.email,
@@ -95,11 +90,5 @@ export async function getUserDetail(
         reportsCreated: user._count.Report,
       },
     };
-
-    log.info({ regionId, userId }, "getUserDetail succeeded");
-    return ok(detail);
-  } catch (error) {
-    log.error({ err: error, regionId, userId }, "getUserDetail failed");
-    return fail("사용자 상세 조회에 실패했습니다.");
-  }
-}
+  },
+);

@@ -1,12 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient, PlanCode } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-workspaces" });
+import { ValidationError } from "@/lib/errors";
 
 export interface WorkspaceListItem {
   id: string;
@@ -26,21 +24,18 @@ const schema = z.object({
   planFilter: z.nativeEnum(PlanCode).optional(),
 });
 
-export async function getWorkspaces(
-  input: Record<string, unknown>,
-): Promise<ActionResult<WorkspaceListItem[]>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const getWorkspaces = createAction(
+  { module: "get-workspaces" },
+  async (_session, input: Record<string, unknown>): Promise<WorkspaceListItem[]> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId, search, planFilter } = parsed.data;
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const { regionId, search, planFilter } = parsed.data;
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
+    const prisma = getPrismaClient(regionId);
 
-  log.info({ regionId }, "getWorkspaces started");
-
-  try {
     const where = {
       ...(search && {
         name: { contains: search, mode: "insensitive" as const },
@@ -62,7 +57,7 @@ export async function getWorkspaces(
       orderBy: { createdAt: "desc" },
     });
 
-    const items: WorkspaceListItem[] = workspaces.map((ws) => ({
+    return workspaces.map((ws) => ({
       id: ws.id,
       name: ws.name,
       planCode: ws.planCode,
@@ -73,11 +68,5 @@ export async function getWorkspaces(
       esgTotalCount: ws._count.esgSummaries,
       createdAt: ws.createdAt,
     }));
-
-    log.info({ regionId, count: items.length }, "getWorkspaces succeeded");
-    return ok(items);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getWorkspaces failed");
-    return fail("워크스페이스 목록 조회에 실패했습니다.");
-  }
-}
+  },
+);

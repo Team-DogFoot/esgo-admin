@@ -1,12 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient, PlanCode, SubscriptionStatus } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-subscriptions" });
+import { ValidationError } from "@/lib/errors";
 
 const schema = z.object({
   regionId: z.string(),
@@ -39,21 +37,19 @@ export interface PaginatedSubscriptions {
   totalPages: number;
 }
 
-export async function getSubscriptions(
-  input: Record<string, unknown>,
-): Promise<ActionResult<PaginatedSubscriptions>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const getSubscriptions = createAction(
+  { module: "get-subscriptions" },
+  async (_session, input: Record<string, unknown>): Promise<PaginatedSubscriptions> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId, page, perPage, search, planFilter, statusFilter } =
-    parsed.data;
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const { regionId, page, perPage, search, planFilter, statusFilter } =
+      parsed.data;
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, page, perPage }, "getSubscriptions started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const where = {
       ...(search && {
         workspace: {
@@ -94,21 +90,12 @@ export async function getSubscriptions(
       createdAt: sub.createdAt,
     }));
 
-    const result: PaginatedSubscriptions = {
+    return {
       items,
       total,
       page,
       perPage,
       totalPages: Math.ceil(total / perPage),
     };
-
-    log.info(
-      { regionId, total, page },
-      "getSubscriptions succeeded",
-    );
-    return ok(result);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getSubscriptions failed");
-    return fail("구독 목록 조회에 실패했습니다.");
-  }
-}
+  },
+);

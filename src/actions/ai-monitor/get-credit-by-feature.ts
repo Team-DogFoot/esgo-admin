@@ -1,12 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-credit-by-feature" });
+import { ValidationError } from "@/lib/errors";
 
 export interface CreditByFeatureItem {
   feature: string;
@@ -26,20 +24,18 @@ const schema = z.object({
   regionId: z.string(),
 });
 
-export async function getCreditByFeature(
-  input: z.input<typeof schema>,
-): Promise<ActionResult<CreditByFeatureItem[]>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const getCreditByFeature = createAction(
+  { module: "get-credit-by-feature" },
+  async (_session, input: z.input<typeof schema>): Promise<CreditByFeatureItem[]> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId } = parsed.data;
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const { regionId } = parsed.data;
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId }, "getCreditByFeature started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     thirtyDaysAgo.setHours(0, 0, 0, 0);
@@ -57,14 +53,8 @@ export async function getCreditByFeature(
       featureMap.set(feature, current + Math.abs(ledger.amount));
     }
 
-    const items: CreditByFeatureItem[] = Array.from(featureMap.entries())
+    return Array.from(featureMap.entries())
       .map(([feature, amount]) => ({ feature, amount }))
       .sort((a, b) => b.amount - a.amount);
-
-    log.info({ regionId, features: items.length }, "getCreditByFeature succeeded");
-    return ok(items);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getCreditByFeature failed");
-    return fail("기능별 크레딧 조회에 실패했습니다.");
-  }
-}
+  },
+);

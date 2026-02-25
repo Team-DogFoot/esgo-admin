@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-workspace-subscription" });
+import { ValidationError } from "@/lib/errors";
 
 export interface SubscriptionInfo {
   id: string;
@@ -39,17 +37,14 @@ export interface WorkspaceSubscriptionData {
   payments: PaymentItem[];
 }
 
-export async function getWorkspaceSubscription(
-  regionId: string,
-  workspaceId: string,
-): Promise<ActionResult<WorkspaceSubscriptionData>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getWorkspaceSubscription = createAction(
+  { module: "get-workspace-subscription" },
+  async (_session, regionId: string, workspaceId: string): Promise<WorkspaceSubscriptionData> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, workspaceId }, "getWorkspaceSubscription started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const subscription = await prisma.subscription.findUnique({
       where: { workspaceId },
       include: {
@@ -102,10 +97,6 @@ export async function getWorkspaceSubscription(
       createdAt: p.createdAt,
     }));
 
-    log.info({ regionId, workspaceId }, "getWorkspaceSubscription succeeded");
-    return ok({ subscription: subscriptionInfo, payments: paymentItems });
-  } catch (error) {
-    log.error({ err: error, regionId, workspaceId }, "getWorkspaceSubscription failed");
-    return fail("구독 정보 조회에 실패했습니다.");
-  }
-}
+    return { subscription: subscriptionInfo, payments: paymentItems };
+  },
+);

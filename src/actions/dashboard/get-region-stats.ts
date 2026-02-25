@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-region-stats" });
+import { ValidationError } from "@/lib/errors";
 
 export interface RegionStats {
   totalWorkspaces: number;
@@ -16,15 +14,14 @@ export interface RegionStats {
   esgCompletionRate: number;
 }
 
-export async function getRegionStats(regionId: string): Promise<ActionResult<RegionStats>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getRegionStats = createAction(
+  { module: "get-region-stats" },
+  async (_session, regionId: string): Promise<RegionStats> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
+    const prisma = getPrismaClient(regionId);
 
-  log.info({ regionId }, "getRegionStats started");
-
-  try {
     const [
       totalWorkspaces,
       activeUsers,
@@ -53,7 +50,7 @@ export async function getRegionStats(regionId: string): Promise<ActionResult<Reg
       prisma.esgSummary.count({ where: { status: "COMPLETED" } }),
     ]);
 
-    const stats: RegionStats = {
+    return {
       totalWorkspaces,
       activeUsers,
       totalCreditsConsumed: Math.abs(creditAgg._sum.amount ?? 0),
@@ -64,11 +61,5 @@ export async function getRegionStats(regionId: string): Promise<ActionResult<Reg
       })),
       esgCompletionRate: esgTotal > 0 ? Math.round((esgCompleted / esgTotal) * 100) : 0,
     };
-
-    log.info({ regionId, stats: { totalWorkspaces, activeUsers } }, "getRegionStats succeeded");
-    return ok(stats);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getRegionStats failed");
-    return fail("통계 조회에 실패했습니다.");
-  }
-}
+  },
+);

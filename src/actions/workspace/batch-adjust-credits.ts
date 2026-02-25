@@ -2,12 +2,13 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
+import { ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 
-const log = logger.child({ module: "batch-adjust-credits" });
+const batchLog = logger.child({ module: "batch-adjust-credits" });
 
 const schema = z.object({
   regionId: z.string(),
@@ -16,20 +17,18 @@ const schema = z.object({
   reason: z.string().min(1, "사유를 입력하세요."),
 });
 
-export async function batchAdjustCredits(
-  input: z.infer<typeof schema>,
-): Promise<ActionResult<{ adjustedCount: number }>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const batchAdjustCredits = createAction(
+  { module: "batch-adjust-credits" },
+  async (_session, input: z.infer<typeof schema>): Promise<{ adjustedCount: number }> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId, workspaceIds, amount, reason } = parsed.data;
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const { regionId, workspaceIds, amount, reason } = parsed.data;
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, workspaceIds, amount, reason }, "batchAdjustCredits started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const result = await prisma.$transaction(async (tx) => {
       let adjustedCount = 0;
 
@@ -39,13 +38,13 @@ export async function batchAdjustCredits(
           select: { creditBalance: true },
         });
         if (!ws) {
-          log.warn({ workspaceId }, "workspace not found, skipping");
+          batchLog.warn({ workspaceId }, "workspace not found, skipping");
           continue;
         }
 
         const newBalance = ws.creditBalance + amount;
         if (newBalance < 0) {
-          log.warn({ workspaceId, currentBalance: ws.creditBalance, amount }, "insufficient balance, skipping");
+          batchLog.warn({ workspaceId, currentBalance: ws.creditBalance, amount }, "insufficient balance, skipping");
           continue;
         }
 
@@ -71,10 +70,6 @@ export async function batchAdjustCredits(
     });
 
     revalidatePath(`/${regionId}/workspaces`);
-    log.info({ regionId, adjustedCount: result.adjustedCount }, "batchAdjustCredits succeeded");
-    return ok(result);
-  } catch (error) {
-    log.error({ err: error, regionId }, "batchAdjustCredits failed");
-    return fail("크레딧 일괄 조정에 실패했습니다.");
-  }
-}
+    return result;
+  },
+);

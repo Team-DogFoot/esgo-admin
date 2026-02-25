@@ -1,12 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-pipelines" });
+import { ValidationError } from "@/lib/errors";
 
 const schema = z.object({
   regionId: z.string(),
@@ -41,21 +39,19 @@ export interface PaginatedPipelines {
   totalPages: number;
 }
 
-export async function getPipelines(
-  input: z.input<typeof schema>,
-): Promise<ActionResult<PaginatedPipelines>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const getPipelines = createAction(
+  { module: "get-pipelines" },
+  async (_session, input: z.input<typeof schema>): Promise<PaginatedPipelines> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId, page, perPage, phase, status, search } = parsed.data;
+    const { regionId, page, perPage, phase, status, search } = parsed.data;
 
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, page, phase, status }, "getPipelines started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const where: Record<string, unknown> = {};
 
     if (phase) {
@@ -110,10 +106,6 @@ export async function getPipelines(
 
     const totalPages = Math.ceil(total / perPage);
 
-    log.info({ regionId, total, page }, "getPipelines succeeded");
-    return ok({ items, total, page, perPage, totalPages });
-  } catch (error) {
-    log.error({ err: error, regionId }, "getPipelines failed");
-    return fail("파이프라인 목록 조회에 실패했습니다.");
-  }
-}
+    return { items, total, page, perPage, totalPages };
+  },
+);

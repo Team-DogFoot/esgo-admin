@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-pipeline-errors" });
+import { ValidationError } from "@/lib/errors";
 
 export interface PipelineErrorItem {
   id: string;
@@ -18,17 +16,14 @@ export interface PipelineErrorItem {
   startedAt: Date;
 }
 
-export async function getPipelineErrors(
-  regionId: string,
-  limit: number = 10,
-): Promise<ActionResult<PipelineErrorItem[]>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getPipelineErrors = createAction(
+  { module: "get-pipeline-errors" },
+  async (_session, regionId: string, limit: number = 10): Promise<PipelineErrorItem[]> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, limit }, "getPipelineErrors started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const sessions = await prisma.pipelineSession.findMany({
       where: { errorCount: { gt: 0 } },
       include: {
@@ -39,7 +34,7 @@ export async function getPipelineErrors(
       take: limit,
     });
 
-    const items: PipelineErrorItem[] = sessions.map((s) => ({
+    return sessions.map((s) => ({
       id: s.id,
       sessionId: s.sessionId,
       workspaceName: s.Workspace.name,
@@ -49,11 +44,5 @@ export async function getPipelineErrors(
       lastError: s.lastError,
       startedAt: s.startedAt,
     }));
-
-    log.info({ regionId, count: items.length }, "getPipelineErrors succeeded");
-    return ok(items);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getPipelineErrors failed");
-    return fail("파이프라인 에러 조회에 실패했습니다.");
-  }
-}
+  },
+);

@@ -1,13 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { getDateRangeFilter } from "@/lib/date-range";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-reports" });
+import { ValidationError } from "@/lib/errors";
 
 const PAGE_SIZE = 20;
 
@@ -34,21 +32,19 @@ export interface PaginatedReports {
   total: number;
 }
 
-export async function getReports(
-  input: z.input<typeof schema>,
-): Promise<ActionResult<PaginatedReports>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const getReports = createAction(
+  { module: "get-reports" },
+  async (_session, input: z.input<typeof schema>): Promise<PaginatedReports> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId, page, dateRange, search } = parsed.data;
+    const { regionId, page, dateRange, search } = parsed.data;
 
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, page }, "getReports started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const dateFilter = getDateRangeFilter(dateRange);
 
     const where = {
@@ -90,10 +86,6 @@ export async function getReports(
 
     const totalPages = Math.ceil(total / PAGE_SIZE);
 
-    log.info({ regionId, total, page }, "getReports succeeded");
-    return ok({ items, page, totalPages, total });
-  } catch (error) {
-    log.error({ err: error, regionId }, "getReports failed");
-    return fail("보고서 목록 조회에 실패했습니다.");
-  }
-}
+    return { items, page, totalPages, total };
+  },
+);

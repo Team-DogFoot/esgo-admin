@@ -1,12 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient, PlanCode } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-esg-overview" });
+import { ValidationError } from "@/lib/errors";
 
 const PAGE_SIZE = 20;
 
@@ -87,21 +85,19 @@ function buildOverviewItem(ws: {
   };
 }
 
-export async function getEsgOverview(
-  input: Record<string, unknown>,
-): Promise<ActionResult<PaginatedEsgOverview>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const getEsgOverview = createAction(
+  { module: "get-esg-overview" },
+  async (_session, input: Record<string, unknown>): Promise<PaginatedEsgOverview> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId, page, completionRange, planFilter, search } = parsed.data;
+    const { regionId, page, completionRange, planFilter, search } = parsed.data;
 
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, page }, "getEsgOverview started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const workspaceWhere = {
       ...(planFilter && { planCode: planFilter }),
       ...(search && {
@@ -134,8 +130,7 @@ export async function getEsgOverview(
       const items = workspaces.map(buildOverviewItem);
       const totalPages = Math.ceil(total / PAGE_SIZE);
 
-      log.info({ regionId, total, page }, "getEsgOverview succeeded");
-      return ok({ items, page, totalPages, total });
+      return { items, page, totalPages, total };
     }
 
     // completionRange filter requires computing rates — in-memory filtering
@@ -155,10 +150,6 @@ export async function getEsgOverview(
     const totalPages = Math.ceil(total / PAGE_SIZE);
     const items = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-    log.info({ regionId, total, page }, "getEsgOverview succeeded");
-    return ok({ items, page, totalPages, total });
-  } catch (error) {
-    log.error({ err: error, regionId }, "getEsgOverview failed");
-    return fail("ESG 현황 조회에 실패했습니다.");
-  }
-}
+    return { items, page, totalPages, total };
+  },
+);

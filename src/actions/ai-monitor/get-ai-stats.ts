@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-ai-stats" });
+import { ValidationError } from "@/lib/errors";
 
 export interface AiStats {
   todayPipelines: number;
@@ -15,14 +13,14 @@ export interface AiStats {
   phaseDistribution: { phase: string; count: number }[];
 }
 
-export async function getAiStats(regionId: string): Promise<ActionResult<AiStats>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getAiStats = createAction(
+  { module: "get-ai-stats" },
+  async (_session, regionId: string): Promise<AiStats> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId }, "getAiStats started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -64,7 +62,7 @@ export async function getAiStats(regionId: string): Promise<ActionResult<AiStats
       ? Math.round((completedPipelines / totalPipelines) * 100)
       : 0;
 
-    const stats: AiStats = {
+    return {
       todayPipelines,
       successRate,
       errorSessions,
@@ -74,11 +72,5 @@ export async function getAiStats(regionId: string): Promise<ActionResult<AiStats
         count: g._count.id,
       })),
     };
-
-    log.info({ regionId, todayPipelines, successRate }, "getAiStats succeeded");
-    return ok(stats);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getAiStats failed");
-    return fail("AI 통계 조회에 실패했습니다.");
-  }
-}
+  },
+);

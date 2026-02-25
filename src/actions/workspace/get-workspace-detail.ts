@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-workspace-detail" });
+import { ValidationError, NotFoundError } from "@/lib/errors";
 
 export interface WorkspaceDetail {
   id: string;
@@ -37,17 +35,14 @@ export interface WorkspaceDetail {
   };
 }
 
-export async function getWorkspaceDetail(
-  regionId: string,
-  workspaceId: string,
-): Promise<ActionResult<WorkspaceDetail>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getWorkspaceDetail = createAction(
+  { module: "get-workspace-detail" },
+  async (_session, regionId: string, workspaceId: string): Promise<WorkspaceDetail> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, workspaceId }, "getWorkspaceDetail started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },
       include: {
@@ -65,13 +60,13 @@ export async function getWorkspaceDetail(
       },
     });
 
-    if (!workspace) return fail("워크스페이스를 찾을 수 없습니다.");
+    if (!workspace) throw new NotFoundError("워크스페이스");
 
     const esgTotal = workspace.esgSummaries.length;
     const esgCompleted = workspace.esgSummaries.filter((s) => s.status === "COMPLETED").length;
     const esgInProgress = workspace.esgSummaries.filter((s) => s.status === "IN_PROGRESS").length;
 
-    const detail: WorkspaceDetail = {
+    return {
       id: workspace.id,
       name: workspace.name,
       businessNumber: workspace.businessNumber,
@@ -96,11 +91,5 @@ export async function getWorkspaceDetail(
       })),
       esgProgress: { total: esgTotal, completed: esgCompleted, inProgress: esgInProgress },
     };
-
-    log.info({ regionId, workspaceId }, "getWorkspaceDetail succeeded");
-    return ok(detail);
-  } catch (error) {
-    log.error({ err: error, regionId, workspaceId }, "getWorkspaceDetail failed");
-    return fail("워크스페이스 상세 조회에 실패했습니다.");
-  }
-}
+  },
+);

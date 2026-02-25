@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-esg-category-stats" });
+import { ValidationError } from "@/lib/errors";
 
 export interface EsgCategoryStat {
   category: string;
@@ -33,16 +31,14 @@ function getCategoryPrefix(esgItemCode: string): string {
   return "OTHER";
 }
 
-export async function getEsgCategoryStats(
-  regionId: string,
-): Promise<ActionResult<EsgCategoryStat[]>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getEsgCategoryStats = createAction(
+  { module: "get-esg-category-stats" },
+  async (_session, regionId: string): Promise<EsgCategoryStat[]> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId }, "getEsgCategoryStats started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const allSummaries = await prisma.esgSummary.findMany({
       select: {
         esgItemCode: true,
@@ -70,7 +66,7 @@ export async function getEsgCategoryStats(
     }
 
     const ORDER = ["E", "S", "G", "OTHER"];
-    const stats: EsgCategoryStat[] = ORDER.filter((prefix) =>
+    return ORDER.filter((prefix) =>
       groups.has(prefix),
     ).map((prefix) => {
       const g = groups.get(prefix)!;
@@ -82,11 +78,5 @@ export async function getEsgCategoryStats(
           g.total > 0 ? Math.round(g.completionRateSum / g.total) : 0,
       };
     });
-
-    log.info({ regionId, categories: stats.length }, "getEsgCategoryStats succeeded");
-    return ok(stats);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getEsgCategoryStats failed");
-    return fail("ESG 카테고리 통계 조회에 실패했습니다.");
-  }
-}
+  },
+);

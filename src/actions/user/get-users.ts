@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-users" });
+import { ValidationError } from "@/lib/errors";
 
 export interface UserListItem {
   id: string;
@@ -22,14 +20,14 @@ interface GetUsersInput {
   search?: string;
 }
 
-export async function getUsers(input: GetUsersInput): Promise<ActionResult<UserListItem[]>> {
-  const region = getRegion(input.regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getUsers = createAction(
+  { module: "get-users" },
+  async (_session, input: GetUsersInput): Promise<UserListItem[]> => {
+    const region = getRegion(input.regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(input.regionId);
-  log.info({ regionId: input.regionId }, "getUsers started");
+    const prisma = getPrismaClient(input.regionId);
 
-  try {
     const where = input.search
       ? {
           OR: [
@@ -53,7 +51,7 @@ export async function getUsers(input: GetUsersInput): Promise<ActionResult<UserL
       take: 100,
     });
 
-    const items: UserListItem[] = users.map((u) => ({
+    return users.map((u) => ({
       id: u.id,
       name: u.name,
       email: u.email,
@@ -65,11 +63,5 @@ export async function getUsers(input: GetUsersInput): Promise<ActionResult<UserL
       createdAt: u.createdAt,
       updatedAt: u.updatedAt,
     }));
-
-    log.info({ regionId: input.regionId, count: items.length }, "getUsers succeeded");
-    return ok(items);
-  } catch (error) {
-    log.error({ err: error, regionId: input.regionId }, "getUsers failed");
-    return fail("사용자 목록 조회에 실패했습니다.");
-  }
-}
+  },
+);

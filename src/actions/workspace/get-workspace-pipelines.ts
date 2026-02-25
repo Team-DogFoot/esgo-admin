@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-workspace-pipelines" });
+import { ValidationError } from "@/lib/errors";
 
 export interface WorkspacePipelineItem {
   id: string;
@@ -21,17 +19,14 @@ export interface WorkspacePipelineItem {
   completedAt: Date | null;
 }
 
-export async function getWorkspacePipelines(
-  regionId: string,
-  workspaceId: string,
-): Promise<ActionResult<WorkspacePipelineItem[]>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getWorkspacePipelines = createAction(
+  { module: "get-workspace-pipelines" },
+  async (_session, regionId: string, workspaceId: string): Promise<WorkspacePipelineItem[]> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, workspaceId }, "getWorkspacePipelines started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const sessions = await prisma.pipelineSession.findMany({
       where: { workspaceId },
       include: {
@@ -40,7 +35,7 @@ export async function getWorkspacePipelines(
       orderBy: { startedAt: "desc" },
     });
 
-    const items: WorkspacePipelineItem[] = sessions.map((s) => ({
+    return sessions.map((s) => ({
       id: s.id,
       sessionId: s.sessionId,
       documentId: s.documentId,
@@ -53,11 +48,5 @@ export async function getWorkspacePipelines(
       startedAt: s.startedAt,
       completedAt: s.completedAt,
     }));
-
-    log.info({ regionId, workspaceId, count: items.length }, "getWorkspacePipelines succeeded");
-    return ok(items);
-  } catch (error) {
-    log.error({ err: error, regionId, workspaceId }, "getWorkspacePipelines failed");
-    return fail("파이프라인 세션 조회에 실패했습니다.");
-  }
-}
+  },
+);

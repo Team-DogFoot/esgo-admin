@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-content-stats" });
+import { ValidationError } from "@/lib/errors";
 
 export interface ContentStats {
   totalDocuments: number;
@@ -25,16 +23,14 @@ function getThisWeekMonday(): Date {
   return monday;
 }
 
-export async function getContentStats(
-  regionId: string,
-): Promise<ActionResult<ContentStats>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getContentStats = createAction(
+  { module: "get-content-stats" },
+  async (_session, regionId: string): Promise<ContentStats> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId }, "getContentStats started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const monday = getThisWeekMonday();
 
     const [
@@ -61,7 +57,7 @@ export async function getContentStats(
       count: g._count.id,
     }));
 
-    const stats: ContentStats = {
+    return {
       totalDocuments,
       weeklyUploads,
       esgCompletionRate:
@@ -69,14 +65,5 @@ export async function getContentStats(
       totalReports,
       dataSourceDistribution,
     };
-
-    log.info(
-      { regionId, totalDocuments, weeklyUploads },
-      "getContentStats succeeded",
-    );
-    return ok(stats);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getContentStats failed");
-    return fail("콘텐츠 통계 조회에 실패했습니다.");
-  }
-}
+  },
+);

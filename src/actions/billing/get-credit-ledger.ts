@@ -1,13 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient, CreditType } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { getDateRangeFilter } from "@/lib/date-range";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-credit-ledger" });
+import { ValidationError } from "@/lib/errors";
 
 const schema = z.object({
   regionId: z.string(),
@@ -41,21 +39,19 @@ export interface PaginatedCreditLedger {
   totalPages: number;
 }
 
-export async function getCreditLedger(
-  input: Record<string, unknown>,
-): Promise<ActionResult<PaginatedCreditLedger>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const getCreditLedger = createAction(
+  { module: "get-credit-ledger" },
+  async (_session, input: Record<string, unknown>): Promise<PaginatedCreditLedger> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId, page, perPage, search, typeFilter, dateRange } =
-    parsed.data;
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const { regionId, page, perPage, search, typeFilter, dateRange } =
+      parsed.data;
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, page, perPage }, "getCreditLedger started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const dateFilter = getDateRangeFilter(dateRange);
 
     const where = {
@@ -93,18 +89,12 @@ export async function getCreditLedger(
       createdAt: l.createdAt,
     }));
 
-    const result: PaginatedCreditLedger = {
+    return {
       items,
       total,
       page,
       perPage,
       totalPages: Math.ceil(total / perPage),
     };
-
-    log.info({ regionId, total, page }, "getCreditLedger succeeded");
-    return ok(result);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getCreditLedger failed");
-    return fail("크레딧 내역 조회에 실패했습니다.");
-  }
-}
+  },
+);

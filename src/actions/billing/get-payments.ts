@@ -1,13 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient, PaymentStatus } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { getDateRangeFilter } from "@/lib/date-range";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-payments" });
+import { ValidationError } from "@/lib/errors";
 
 const schema = z.object({
   regionId: z.string(),
@@ -44,21 +42,19 @@ export interface PaginatedPayments {
   totalPages: number;
 }
 
-export async function getPayments(
-  input: Record<string, unknown>,
-): Promise<ActionResult<PaginatedPayments>> {
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) return fail("잘못된 요청입니다.");
+export const getPayments = createAction(
+  { module: "get-payments" },
+  async (_session, input: Record<string, unknown>): Promise<PaginatedPayments> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-  const { regionId, page, perPage, search, statusFilter, dateRange } =
-    parsed.data;
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+    const { regionId, page, perPage, search, statusFilter, dateRange } =
+      parsed.data;
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, page, perPage }, "getPayments started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const dateFilter = getDateRangeFilter(dateRange);
 
     const where = {
@@ -99,18 +95,12 @@ export async function getPayments(
       createdAt: p.createdAt,
     }));
 
-    const result: PaginatedPayments = {
+    return {
       items,
       total,
       page,
       perPage,
       totalPages: Math.ceil(total / perPage),
     };
-
-    log.info({ regionId, total, page }, "getPayments succeeded");
-    return ok(result);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getPayments failed");
-    return fail("결제 목록 조회에 실패했습니다.");
-  }
-}
+  },
+);

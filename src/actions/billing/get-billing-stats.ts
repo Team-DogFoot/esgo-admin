@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-billing-stats" });
+import { ValidationError } from "@/lib/errors";
 
 export interface RecentPaymentItem {
   id: string;
@@ -28,16 +26,14 @@ export interface BillingStats {
   recentPayments: RecentPaymentItem[];
 }
 
-export async function getBillingStats(
-  regionId: string,
-): Promise<ActionResult<BillingStats>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getBillingStats = createAction(
+  { module: "get-billing-stats" },
+  async (_session, regionId: string): Promise<BillingStats> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId }, "getBillingStats started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -87,7 +83,7 @@ export async function getBillingStats(
         ? Math.round((activeSubscriptions / totalWorkspaces) * 100 * 10) / 10
         : 0;
 
-    const stats: BillingStats = {
+    return {
       mrr,
       activeSubscriptions,
       totalWorkspaces,
@@ -108,14 +104,5 @@ export async function getBillingStats(
         createdAt: p.createdAt,
       })),
     };
-
-    log.info(
-      { regionId, mrr, activeSubscriptions },
-      "getBillingStats succeeded",
-    );
-    return ok(stats);
-  } catch (error) {
-    log.error({ err: error, regionId }, "getBillingStats failed");
-    return fail("빌링 통계 조회에 실패했습니다.");
-  }
-}
+  },
+);

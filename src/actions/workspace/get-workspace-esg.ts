@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-workspace-esg" });
+import { ValidationError } from "@/lib/errors";
 
 export interface EsgSummaryItem {
   id: string;
@@ -48,17 +46,14 @@ function computeCategory(label: string, items: EsgSummaryItem[]): CategoryComple
   return { category: label, total, completed, inProgress, rate };
 }
 
-export async function getWorkspaceEsg(
-  regionId: string,
-  workspaceId: string,
-): Promise<ActionResult<WorkspaceEsgData>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getWorkspaceEsg = createAction(
+  { module: "get-workspace-esg" },
+  async (_session, regionId: string, workspaceId: string): Promise<WorkspaceEsgData> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, workspaceId }, "getWorkspaceEsg started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const esgSummaries = await prisma.esgSummary.findMany({
       where: { workspaceId },
       orderBy: { esgItemCode: "asc" },
@@ -90,10 +85,6 @@ export async function getWorkspaceEsg(
 
     const overall = computeCategory("전체", summaries);
 
-    log.info({ regionId, workspaceId, count: summaries.length }, "getWorkspaceEsg succeeded");
-    return ok({ summaries, overall, categories });
-  } catch (error) {
-    log.error({ err: error, regionId, workspaceId }, "getWorkspaceEsg failed");
-    return fail("ESG 데이터 조회에 실패했습니다.");
-  }
-}
+    return { summaries, overall, categories };
+  },
+);

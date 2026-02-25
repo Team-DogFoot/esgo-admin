@@ -1,11 +1,9 @@
 "use server";
 
-import { ok, fail, type ActionResult } from "@/lib/action";
+import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { logger } from "@/lib/logger";
-
-const log = logger.child({ module: "get-workspace-documents" });
+import { ValidationError } from "@/lib/errors";
 
 export interface WorkspaceDocumentItem {
   id: string;
@@ -21,17 +19,14 @@ export interface WorkspaceDocumentItem {
   createdAt: Date;
 }
 
-export async function getWorkspaceDocuments(
-  regionId: string,
-  workspaceId: string,
-): Promise<ActionResult<WorkspaceDocumentItem[]>> {
-  const region = getRegion(regionId);
-  if (!region) return fail("유효하지 않은 리전입니다.");
+export const getWorkspaceDocuments = createAction(
+  { module: "get-workspace-documents" },
+  async (_session, regionId: string, workspaceId: string): Promise<WorkspaceDocumentItem[]> => {
+    const region = getRegion(regionId);
+    if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(regionId);
-  log.info({ regionId, workspaceId }, "getWorkspaceDocuments started");
+    const prisma = getPrismaClient(regionId);
 
-  try {
     const documents = await prisma.document.findMany({
       where: { workspaceId },
       include: {
@@ -46,7 +41,7 @@ export async function getWorkspaceDocuments(
       orderBy: { createdAt: "desc" },
     });
 
-    const items: WorkspaceDocumentItem[] = documents.map((doc) => {
+    return documents.map((doc) => {
       const latestPipeline = doc.PipelineSession[0] ?? null;
       return {
         id: doc.id,
@@ -62,11 +57,5 @@ export async function getWorkspaceDocuments(
         createdAt: doc.createdAt,
       };
     });
-
-    log.info({ regionId, workspaceId, count: items.length }, "getWorkspaceDocuments succeeded");
-    return ok(items);
-  } catch (error) {
-    log.error({ err: error, regionId, workspaceId }, "getWorkspaceDocuments failed");
-    return fail("문서 목록 조회에 실패했습니다.");
-  }
-}
+  },
+);
