@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { ok, fail, type ActionResult } from "@/lib/action";
-import { getPrismaClient } from "@/lib/prisma";
+import { getPrismaClient, PlanCode } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { logger } from "@/lib/logger";
 
@@ -12,11 +12,11 @@ const log = logger.child({ module: "change-plan" });
 const schema = z.object({
   regionId: z.string(),
   workspaceId: z.string(),
-  planCode: z.enum(["FREE", "PRO"]),
+  planCode: z.nativeEnum(PlanCode),
 });
 
 export async function changePlan(
-  input: z.infer<typeof schema>,
+  input: Record<string, unknown>,
 ): Promise<ActionResult<{ planCode: string }>> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return fail("잘못된 요청입니다.");

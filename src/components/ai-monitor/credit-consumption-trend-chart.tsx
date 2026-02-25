@@ -10,9 +10,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { DailyConsumption } from "@/types/credit";
 
 interface CreditConsumptionTrendChartProps {
-  data: { date: string; amount: number }[];
+  data: DailyConsumption[];
   title: string;
 }
 

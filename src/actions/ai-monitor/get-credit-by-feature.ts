@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { ok, fail, type ActionResult } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
@@ -21,9 +22,17 @@ function categorizeReason(reason: string): string {
   return "기타";
 }
 
+const schema = z.object({
+  regionId: z.string(),
+});
+
 export async function getCreditByFeature(
-  regionId: string,
+  input: z.input<typeof schema>,
 ): Promise<ActionResult<CreditByFeatureItem[]>> {
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return fail("잘못된 요청입니다.");
+
+  const { regionId } = parsed.data;
   const region = getRegion(regionId);
   if (!region) return fail("유효하지 않은 리전입니다.");
 
@@ -31,8 +40,12 @@ export async function getCreditByFeature(
   log.info({ regionId }, "getCreditByFeature started");
 
   try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
     const ledgers = await prisma.creditLedger.findMany({
-      where: { type: "CONSUME" },
+      where: { type: "CONSUME", createdAt: { gte: thirtyDaysAgo } },
       select: { reason: true, amount: true },
     });
 

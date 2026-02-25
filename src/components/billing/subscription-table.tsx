@@ -11,17 +11,13 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatCurrency } from "@/lib/format";
+import { PLAN_BADGE, PLAN_LABEL } from "@/lib/constants";
 import type { SubscriptionListItem } from "@/actions/billing/get-subscriptions";
 
 interface SubscriptionTableProps {
   subscriptions: SubscriptionListItem[];
   regionId: string;
 }
-
-const PLAN_BADGE: Record<string, string> = {
-  FREE: "bg-gray-100 text-gray-700",
-  PRO: "bg-blue-100 text-blue-700",
-};
 
 const STATUS_VARIANT: Record<
   string,
@@ -91,7 +87,7 @@ export function SubscriptionTable({
                       PLAN_BADGE[sub.planCode] ?? PLAN_BADGE.FREE
                     }
                   >
-                    {sub.planCode}
+                    {PLAN_LABEL[sub.planCode] ?? sub.planCode}
                   </Badge>
                 </TableCell>
                 <TableCell>

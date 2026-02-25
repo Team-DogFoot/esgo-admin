@@ -2,8 +2,9 @@
 
 import { z } from "zod";
 import { ok, fail, type ActionResult } from "@/lib/action";
-import { getPrismaClient } from "@/lib/prisma";
+import { getPrismaClient, CreditType } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
+import { getDateRangeFilter } from "@/lib/date-range";
 import { logger } from "@/lib/logger";
 
 const log = logger.child({ module: "get-credit-ledger" });
@@ -13,7 +14,7 @@ const schema = z.object({
   page: z.number().int().min(1).optional().default(1),
   perPage: z.number().int().min(1).max(100).optional().default(20),
   search: z.string().optional(),
-  typeFilter: z.string().optional(),
+  typeFilter: z.nativeEnum(CreditType).optional(),
   dateRange: z
     .enum(["this_month", "last_month", "3_months", "all"])
     .optional()
@@ -40,24 +41,8 @@ export interface PaginatedCreditLedger {
   totalPages: number;
 }
 
-function getDateRangeFilter(
-  dateRange: string,
-): { gte: Date } | undefined {
-  const now = new Date();
-  switch (dateRange) {
-    case "this_month":
-      return { gte: new Date(now.getFullYear(), now.getMonth(), 1) };
-    case "last_month":
-      return { gte: new Date(now.getFullYear(), now.getMonth() - 1, 1) };
-    case "3_months":
-      return { gte: new Date(now.getFullYear(), now.getMonth() - 3, 1) };
-    default:
-      return undefined;
-  }
-}
-
 export async function getCreditLedger(
-  input: z.input<typeof schema>,
+  input: Record<string, unknown>,
 ): Promise<ActionResult<PaginatedCreditLedger>> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return fail("잘못된 요청입니다.");
@@ -79,15 +64,7 @@ export async function getCreditLedger(
           name: { contains: search, mode: "insensitive" as const },
         },
       }),
-      ...(typeFilter && {
-        type: typeFilter as
-          | "INITIAL"
-          | "MONTHLY"
-          | "PURCHASE"
-          | "CONSUME"
-          | "REFUND"
-          | "ADMIN",
-      }),
+      ...(typeFilter && { type: typeFilter }),
       ...(dateFilter && { createdAt: dateFilter }),
     };
 

@@ -9,26 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/common/status-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { formatNumber } from "@/lib/format";
+import { PLAN_BADGE, PLAN_LABEL } from "@/lib/constants";
+import { getActivityStatus } from "@/lib/activity";
 import type { UserDetail } from "@/actions/user/get-user-detail";
 
 interface UserDetailViewProps {
   user: UserDetail;
   regionId: string;
-}
-
-const PLAN_BADGE: Record<string, string> = {
-  FREE: "bg-gray-100 text-gray-700",
-  PRO: "bg-blue-100 text-blue-700",
-};
-
-function getActivityStatus(updatedAt: Date): { variant: "success" | "warning" | "muted"; label: string } {
-  const now = new Date();
-  const diffMs = now.getTime() - new Date(updatedAt).getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-  if (diffDays <= 7) return { variant: "success", label: "활성" };
-  if (diffDays <= 30) return { variant: "warning", label: "비활성" };
-  return { variant: "muted", label: "휴면" };
 }
 
 function getInitials(name: string | null): string {
@@ -148,7 +135,7 @@ export function UserDetailView({ user, regionId }: UserDetailViewProps) {
                       </TableCell>
                       <TableCell>
                         <Badge className={PLAN_BADGE[ws.planCode] ?? PLAN_BADGE.FREE}>
-                          {ws.planCode}
+                          {PLAN_LABEL[ws.planCode] ?? ws.planCode}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">{ws.creditBalance.toLocaleString()}</TableCell>

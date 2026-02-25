@@ -3,6 +3,7 @@ import { FilterBar } from "@/components/common/filter-bar";
 import { Pagination } from "@/components/common/pagination";
 import { SubscriptionTable } from "@/components/billing/subscription-table";
 import { getRegion } from "@/lib/regions";
+import { PLAN_LABEL } from "@/lib/constants";
 import { getSubscriptions } from "@/actions/billing/get-subscriptions";
 
 interface SubscriptionsPageProps {
@@ -17,8 +18,7 @@ interface SubscriptionsPageProps {
 
 const PLAN_FILTER_OPTIONS = [
   { label: "전체 플랜", value: "ALL" },
-  { label: "FREE", value: "FREE" },
-  { label: "PRO", value: "PRO" },
+  ...Object.entries(PLAN_LABEL).map(([value, label]) => ({ label, value })),
 ];
 
 const STATUS_FILTER_OPTIONS = [

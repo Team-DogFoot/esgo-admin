@@ -13,6 +13,7 @@ import { WorkspaceDocumentsTab } from "@/components/workspace/workspace-document
 import { WorkspaceEsgTab } from "@/components/workspace/workspace-esg-tab";
 import { WorkspacePipelinesTab } from "@/components/workspace/workspace-pipelines-tab";
 import { WorkspaceSubscriptionTab } from "@/components/workspace/workspace-subscription-tab";
+import { PLAN_BADGE, PLAN_LABEL } from "@/lib/constants";
 import type { WorkspaceDetail as WorkspaceDetailType } from "@/actions/workspace/get-workspace-detail";
 import type { WorkspaceDocumentItem } from "@/actions/workspace/get-workspace-documents";
 import type { WorkspaceEsgData } from "@/actions/workspace/get-workspace-esg";
@@ -27,11 +28,6 @@ interface WorkspaceDetailProps {
   pipelines: WorkspacePipelineItem[];
   subscriptionData: WorkspaceSubscriptionData;
 }
-
-const PLAN_BADGE: Record<string, string> = {
-  FREE: "bg-gray-100 text-gray-700",
-  PRO: "bg-blue-100 text-blue-700",
-};
 
 const TAB_VALUES = ["overview", "members", "credits", "documents", "esg", "pipelines", "subscription"] as const;
 type TabValue = typeof TAB_VALUES[number];
@@ -78,7 +74,7 @@ export function WorkspaceDetail({
               <CardTitle>{workspace.name}</CardTitle>
               <p className="text-sm text-muted-foreground">사업자번호: {workspace.businessNumber}</p>
             </div>
-            <Badge className={PLAN_BADGE[workspace.planCode] ?? PLAN_BADGE.FREE}>{workspace.planCode}</Badge>
+            <Badge className={PLAN_BADGE[workspace.planCode] ?? PLAN_BADGE.FREE}>{PLAN_LABEL[workspace.planCode] ?? workspace.planCode}</Badge>
           </div>
         </CardHeader>
         <CardContent>

@@ -1,21 +1,26 @@
 "use server";
 
+import { z } from "zod";
 import { ok, fail, type ActionResult } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { logger } from "@/lib/logger";
+import type { DailyConsumption } from "@/types/credit";
 
 const log = logger.child({ module: "get-credit-consumption" });
 
-export interface DailyConsumption {
-  date: string;
-  amount: number;
-}
+const schema = z.object({
+  regionId: z.string(),
+  days: z.number().int().min(1).max(365).default(7),
+});
 
 export async function getCreditConsumption(
-  regionId: string,
-  days: number = 7,
+  input: z.input<typeof schema>,
 ): Promise<ActionResult<DailyConsumption[]>> {
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return fail("잘못된 요청입니다.");
+
+  const { regionId, days } = parsed.data;
   const region = getRegion(regionId);
   if (!region) return fail("유효하지 않은 리전입니다.");
 

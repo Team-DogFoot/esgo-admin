@@ -233,7 +233,9 @@ export function MyComponent({ regionId }: Props) {
 ```typescript
 // 플랜 뱃지
 FREE: "bg-gray-100 text-gray-700"
-PRO: "bg-blue-100 text-blue-700"
+PRO: "bg-indigo-100 text-indigo-700"
+STANDARD: "bg-blue-100 text-blue-700"
+ENTERPRISE: "bg-purple-100 text-purple-700"
 ```
 
 ### 레이아웃
@@ -293,7 +295,7 @@ User ──< WorkspaceMember >── Workspace ──< Document
                                   │    ├──< Subscription ──< Plan
                                   │    └──< Payment
 
-Workspace: creditBalance (Int), planCode (FREE/PRO)
+Workspace: creditBalance (Int), planCode (FREE/PRO/STANDARD/ENTERPRISE)
 CreditLedger: amount, balance, type (INITIAL/MONTHLY/PURCHASE/CONSUME/REFUND/ADMIN)
 EsgSummary: esgItemCode, status (NOT_STARTED/IN_PROGRESS/COMPLETED)
 Plan: code, monthlyPrice, initialCredits, monthlyCredits, maxMembers, maxDocuments

@@ -8,17 +8,13 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { BatchCreditDialog } from "@/components/workspace/batch-credit-dialog";
+import { PLAN_BADGE, PLAN_LABEL } from "@/lib/constants";
 import type { WorkspaceListItem } from "@/actions/workspace/get-workspaces";
 
 interface WorkspaceTableProps {
   workspaces: WorkspaceListItem[];
   regionId: string;
 }
-
-const PLAN_BADGE: Record<string, string> = {
-  FREE: "bg-gray-100 text-gray-700",
-  PRO: "bg-blue-100 text-blue-700",
-};
 
 export function WorkspaceTable({ workspaces, regionId }: WorkspaceTableProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -104,12 +100,12 @@ export function WorkspaceTable({ workspaces, regionId }: WorkspaceTableProps) {
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Badge className={PLAN_BADGE[ws.planCode] ?? PLAN_BADGE.FREE}>{ws.planCode}</Badge>
+                  <Badge className={PLAN_BADGE[ws.planCode] ?? PLAN_BADGE.FREE}>{PLAN_LABEL[ws.planCode] ?? ws.planCode}</Badge>
                 </TableCell>
                 <TableCell className="text-right">{ws.creditBalance.toLocaleString()}</TableCell>
                 <TableCell className="text-right">{ws.memberCount}</TableCell>
                 <TableCell className="text-right">{ws.documentCount}</TableCell>
-                <TableCell className="text-right">{ws.esgCompletedCount}/69</TableCell>
+                <TableCell className="text-right">{ws.esgCompletedCount}/{ws.esgTotalCount}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(ws.createdAt).toLocaleDateString("ko-KR")}
                 </TableCell>

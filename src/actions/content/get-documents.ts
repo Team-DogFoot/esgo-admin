@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ok, fail, type ActionResult } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
+import { getDateRangeFilter } from "@/lib/date-range";
 import { logger } from "@/lib/logger";
 
 const log = logger.child({ module: "get-documents" });
@@ -42,21 +43,6 @@ export interface PaginatedDocuments {
   total: number;
 }
 
-function getDateRangeStart(range: string | undefined): Date | undefined {
-  if (!range || range === "all") return undefined;
-  const now = new Date();
-  switch (range) {
-    case "this_month":
-      return new Date(now.getFullYear(), now.getMonth(), 1);
-    case "last_month":
-      return new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    case "3_months":
-      return new Date(now.getFullYear(), now.getMonth() - 3, 1);
-    default:
-      return undefined;
-  }
-}
-
 export async function getDocuments(
   input: z.input<typeof schema>,
 ): Promise<ActionResult<PaginatedDocuments>> {
@@ -73,7 +59,7 @@ export async function getDocuments(
   log.info({ regionId, page }, "getDocuments started");
 
   try {
-    const dateStart = getDateRangeStart(dateRange);
+    const dateFilter = getDateRangeFilter(dateRange);
 
     const where = {
       ...(statusFilter && { status: statusFilter }),
@@ -82,7 +68,7 @@ export async function getDocuments(
           ? { some: {} }
           : { none: {} },
       }),
-      ...(dateStart && { createdAt: { gte: dateStart } }),
+      ...(dateFilter && { createdAt: dateFilter }),
       ...(search && {
         OR: [
           { fileName: { contains: search, mode: "insensitive" as const } },

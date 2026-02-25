@@ -40,7 +40,7 @@ export default async function PipelinesPage({ params, searchParams }: PipelinesP
   const result = await getPipelines({
     regionId,
     page: currentPage,
-    pageSize: 20,
+    perPage: 20,
     phase: phase as "PREPROCESSED" | "CLASSIFIED" | "EXTRACTED" | undefined,
     status: (status as "all" | "running" | "completed" | "error") ?? "all",
     search: search ?? undefined,

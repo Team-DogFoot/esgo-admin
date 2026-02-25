@@ -16,6 +16,7 @@ model User {
   activeWorkspaceId String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
+  hasUsedTrial      Boolean           @default(false)
   Account           Account[]
   Document          Document[]
   Report            Report[]
@@ -213,6 +214,8 @@ model Subscription {
   canceledAt            DateTime?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime
+  trialEndedAt          DateTime?
+  trialEndsAt           DateTime?
   plan                  Plan               @relation(fields: [planId], references: [id])
   workspace             Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
@@ -1507,7 +1510,9 @@ model mcp_oauth_tokens {
 
 enum PlanCode {
   FREE
+  STANDARD
   PRO
+  ENTERPRISE
 }
 
 enum Role {

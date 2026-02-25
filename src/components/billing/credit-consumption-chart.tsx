@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DailyConsumption } from "@/actions/billing/get-credit-consumption";
+import type { DailyConsumption } from "@/types/credit";
 
 interface CreditConsumptionChartProps {
   data: DailyConsumption[];

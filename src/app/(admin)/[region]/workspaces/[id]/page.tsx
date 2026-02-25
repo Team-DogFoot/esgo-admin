@@ -12,20 +12,31 @@ import { WorkspaceDetail } from "@/components/workspace/workspace-detail";
 
 interface WorkspaceDetailPageProps {
   params: Promise<{ region: string; id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }
 
-export default async function WorkspaceDetailPage({ params }: WorkspaceDetailPageProps) {
+const EMPTY_ESG = {
+  summaries: [] as never[],
+  overall: { category: "전체" as string, total: 0, completed: 0, inProgress: 0, rate: 0 },
+  categories: [] as never[],
+};
+
+export default async function WorkspaceDetailPage({ params, searchParams }: WorkspaceDetailPageProps) {
   const { region: regionId, id } = await params;
+  const { tab } = await searchParams;
   const region = getRegion(regionId);
   if (!region) redirect("/");
+
+  // Always load workspace detail; load tab data only for the active tab
+  const activeTab = tab ?? "overview";
 
   const [detailResult, documentsResult, esgResult, pipelinesResult, subscriptionResult] =
     await Promise.all([
       getWorkspaceDetail(regionId, id),
-      getWorkspaceDocuments(regionId, id),
-      getWorkspaceEsg(regionId, id),
-      getWorkspacePipelines(regionId, id),
-      getWorkspaceSubscription(regionId, id),
+      activeTab === "documents" ? getWorkspaceDocuments(regionId, id) : null,
+      activeTab === "esg" ? getWorkspaceEsg(regionId, id) : null,
+      activeTab === "pipelines" ? getWorkspacePipelines(regionId, id) : null,
+      activeTab === "subscription" ? getWorkspaceSubscription(regionId, id) : null,
     ]);
 
   if (!detailResult.success) {
@@ -61,15 +72,11 @@ export default async function WorkspaceDetailPage({ params }: WorkspaceDetailPag
       <WorkspaceDetail
         workspace={detailResult.data}
         regionId={regionId}
-        documents={documentsResult.success ? documentsResult.data : []}
-        esgData={
-          esgResult.success
-            ? esgResult.data
-            : { summaries: [], overall: { category: "전체", total: 0, completed: 0, inProgress: 0, rate: 0 }, categories: [] }
-        }
-        pipelines={pipelinesResult.success ? pipelinesResult.data : []}
+        documents={documentsResult?.success ? documentsResult.data : []}
+        esgData={esgResult?.success ? esgResult.data : EMPTY_ESG}
+        pipelines={pipelinesResult?.success ? pipelinesResult.data : []}
         subscriptionData={
-          subscriptionResult.success
+          subscriptionResult?.success
             ? subscriptionResult.data
             : { subscription: null, payments: [] }
         }

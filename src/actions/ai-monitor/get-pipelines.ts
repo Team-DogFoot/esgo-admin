@@ -11,7 +11,7 @@ const log = logger.child({ module: "get-pipelines" });
 const schema = z.object({
   regionId: z.string(),
   page: z.number().int().min(1).default(1),
-  pageSize: z.number().int().min(1).max(100).default(20),
+  perPage: z.number().int().min(1).max(100).default(20),
   phase: z.enum(["PREPROCESSED", "CLASSIFIED", "EXTRACTED"]).optional(),
   status: z.enum(["all", "running", "completed", "error"]).default("all"),
   search: z.string().optional(),
@@ -37,7 +37,7 @@ export interface PaginatedPipelines {
   items: PipelineListItem[];
   total: number;
   page: number;
-  pageSize: number;
+  perPage: number;
   totalPages: number;
 }
 
@@ -47,7 +47,7 @@ export async function getPipelines(
   const parsed = schema.safeParse(input);
   if (!parsed.success) return fail("잘못된 요청입니다.");
 
-  const { regionId, page, pageSize, phase, status, search } = parsed.data;
+  const { regionId, page, perPage, phase, status, search } = parsed.data;
 
   const region = getRegion(regionId);
   if (!region) return fail("유효하지 않은 리전입니다.");
@@ -87,8 +87,8 @@ export async function getPipelines(
           Document: { select: { fileName: true } },
         },
         orderBy: { startedAt: "desc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip: (page - 1) * perPage,
+        take: perPage,
       }),
     ]);
 
@@ -108,10 +108,10 @@ export async function getPipelines(
       completedAt: s.completedAt,
     }));
 
-    const totalPages = Math.ceil(total / pageSize);
+    const totalPages = Math.ceil(total / perPage);
 
     log.info({ regionId, total, page }, "getPipelines succeeded");
-    return ok({ items, total, page, pageSize, totalPages });
+    return ok({ items, total, page, perPage, totalPages });
   } catch (error) {
     log.error({ err: error, regionId }, "getPipelines failed");
     return fail("파이프라인 목록 조회에 실패했습니다.");

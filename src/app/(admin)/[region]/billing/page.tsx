@@ -59,7 +59,7 @@ export default async function BillingPage({ params }: BillingPageProps) {
 
   const [statsResult, consumptionResult] = await Promise.all([
     getBillingStats(regionId),
-    getCreditConsumption(regionId, 7),
+    getCreditConsumption({ regionId, days: 7 }),
   ]);
 
   if (!statsResult.success) {

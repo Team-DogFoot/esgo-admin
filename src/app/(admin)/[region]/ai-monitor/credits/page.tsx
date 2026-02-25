@@ -18,8 +18,8 @@ export default async function CreditsPage({ params }: CreditsPageProps) {
 
   const [workspaceResult, featureResult, trendResult] = await Promise.all([
     getCreditByWorkspace(regionId, 10),
-    getCreditByFeature(regionId),
-    getCreditConsumption(regionId, 30),
+    getCreditByFeature({ regionId }),
+    getCreditConsumption({ regionId, days: 30 }),
   ]);
 
   return (

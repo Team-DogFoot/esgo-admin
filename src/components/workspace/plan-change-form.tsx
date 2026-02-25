@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { PLAN_LABEL } from "@/lib/constants";
 import { changePlan } from "@/actions/workspace/change-plan";
 
 interface PlanChangeFormProps {
@@ -29,7 +30,7 @@ export function PlanChangeForm({ regionId, workspaceId, currentPlanCode }: PlanC
       if (planCode === currentPlanCode) { setError("현재 플랜과 동일합니다."); return; }
 
       startTransition(async () => {
-        const result = await changePlan({ regionId, workspaceId, planCode: planCode as "FREE" | "PRO" });
+        const result = await changePlan({ regionId, workspaceId, planCode });
         if (!result.success) { setError(result.error); return; }
         setSuccess(`플랜이 ${result.data.planCode}로 변경되었습니다.`);
       });
@@ -50,8 +51,9 @@ export function PlanChangeForm({ regionId, workspaceId, currentPlanCode }: PlanC
         <Select value={planCode} onValueChange={setPlanCode}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="FREE">FREE</SelectItem>
-            <SelectItem value="PRO">PRO</SelectItem>
+            {Object.entries(PLAN_LABEL).map(([code, label]) => (
+              <SelectItem key={code} value={code}>{label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

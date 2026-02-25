@@ -8,17 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PLAN_BADGE, PLAN_LABEL } from "@/lib/constants";
 import type { EsgOverviewItem } from "@/actions/content/get-esg-overview";
 
 interface EsgOverviewTableProps {
   items: EsgOverviewItem[];
   regionId: string;
 }
-
-const PLAN_BADGE: Record<string, string> = {
-  FREE: "bg-gray-100 text-gray-700",
-  PRO: "bg-blue-100 text-blue-700",
-};
 
 export function EsgOverviewTable({ items, regionId }: EsgOverviewTableProps) {
   if (items.length === 0) {
@@ -56,7 +52,7 @@ export function EsgOverviewTable({ items, regionId }: EsgOverviewTableProps) {
               </TableCell>
               <TableCell>
                 <Badge className={PLAN_BADGE[item.planCode] ?? PLAN_BADGE.FREE}>
-                  {item.planCode}
+                  {PLAN_LABEL[item.planCode] ?? item.planCode}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">{item.totalItems}</TableCell>

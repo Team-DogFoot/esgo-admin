@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { ok, fail, type ActionResult } from "@/lib/action";
-import { getPrismaClient } from "@/lib/prisma";
+import { getPrismaClient, PlanCode, SubscriptionStatus } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { logger } from "@/lib/logger";
 
@@ -13,8 +13,8 @@ const schema = z.object({
   page: z.number().int().min(1).optional().default(1),
   perPage: z.number().int().min(1).max(100).optional().default(20),
   search: z.string().optional(),
-  planFilter: z.string().optional(),
-  statusFilter: z.string().optional(),
+  planFilter: z.nativeEnum(PlanCode).optional(),
+  statusFilter: z.nativeEnum(SubscriptionStatus).optional(),
 });
 
 export interface SubscriptionListItem {
@@ -40,7 +40,7 @@ export interface PaginatedSubscriptions {
 }
 
 export async function getSubscriptions(
-  input: z.input<typeof schema>,
+  input: Record<string, unknown>,
 ): Promise<ActionResult<PaginatedSubscriptions>> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return fail("잘못된 요청입니다.");
@@ -61,15 +61,9 @@ export async function getSubscriptions(
         },
       }),
       ...(planFilter && {
-        plan: { code: planFilter as "FREE" | "PRO" },
+        plan: { code: planFilter },
       }),
-      ...(statusFilter && {
-        status: statusFilter as
-          | "ACTIVE"
-          | "CANCELED"
-          | "PAST_DUE"
-          | "EXPIRED",
-      }),
+      ...(statusFilter && { status: statusFilter }),
     };
 
     const [total, subscriptions] = await Promise.all([

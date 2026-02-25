@@ -48,7 +48,7 @@ export default async function CreditsPage({
     page: currentPage,
     perPage: 20,
     search: search ?? undefined,
-    typeFilter: type ?? undefined,
+    typeFilter: type || undefined,
     dateRange:
       (dateRange as "this_month" | "last_month" | "3_months" | "all") ??
       undefined,

@@ -1,7 +1,8 @@
 "use server";
 
+import { z } from "zod";
 import { ok, fail, type ActionResult } from "@/lib/action";
-import { getPrismaClient } from "@/lib/prisma";
+import { getPrismaClient, PlanCode } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { logger } from "@/lib/logger";
 
@@ -15,38 +16,43 @@ export interface WorkspaceListItem {
   memberCount: number;
   documentCount: number;
   esgCompletedCount: number;
+  esgTotalCount: number;
   createdAt: Date;
 }
 
-interface GetWorkspacesInput {
-  regionId: string;
-  search?: string;
-  planFilter?: string;
-}
+const schema = z.object({
+  regionId: z.string(),
+  search: z.string().optional(),
+  planFilter: z.nativeEnum(PlanCode).optional(),
+});
 
 export async function getWorkspaces(
-  input: GetWorkspacesInput,
+  input: Record<string, unknown>,
 ): Promise<ActionResult<WorkspaceListItem[]>> {
-  const region = getRegion(input.regionId);
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return fail("잘못된 요청입니다.");
+
+  const { regionId, search, planFilter } = parsed.data;
+  const region = getRegion(regionId);
   if (!region) return fail("유효하지 않은 리전입니다.");
 
-  const prisma = getPrismaClient(input.regionId);
+  const prisma = getPrismaClient(regionId);
 
-  log.info({ regionId: input.regionId }, "getWorkspaces started");
+  log.info({ regionId }, "getWorkspaces started");
 
   try {
     const where = {
-      ...(input.search && {
-        name: { contains: input.search, mode: "insensitive" as const },
+      ...(search && {
+        name: { contains: search, mode: "insensitive" as const },
       }),
-      ...(input.planFilter && { planCode: input.planFilter as "FREE" | "PRO" }),
+      ...(planFilter && { planCode: planFilter }),
     };
 
     const workspaces = await prisma.workspace.findMany({
       where,
       include: {
         _count: {
-          select: { members: true, documents: true },
+          select: { members: true, documents: true, esgSummaries: true },
         },
         esgSummaries: {
           where: { status: "COMPLETED" },
@@ -64,13 +70,14 @@ export async function getWorkspaces(
       memberCount: ws._count.members,
       documentCount: ws._count.documents,
       esgCompletedCount: ws.esgSummaries.length,
+      esgTotalCount: ws._count.esgSummaries,
       createdAt: ws.createdAt,
     }));
 
-    log.info({ regionId: input.regionId, count: items.length }, "getWorkspaces succeeded");
+    log.info({ regionId, count: items.length }, "getWorkspaces succeeded");
     return ok(items);
   } catch (error) {
-    log.error({ err: error, regionId: input.regionId }, "getWorkspaces failed");
+    log.error({ err: error, regionId }, "getWorkspaces failed");
     return fail("워크스페이스 목록 조회에 실패했습니다.");
   }
 }

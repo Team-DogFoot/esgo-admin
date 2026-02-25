@@ -5,6 +5,7 @@ import { EsgCategoryStats } from "@/components/content/esg-category-stats";
 import { EsgItemRankings } from "@/components/content/esg-item-rankings";
 import { EsgOverviewTable } from "@/components/content/esg-overview-table";
 import { getRegion } from "@/lib/regions";
+import { PLAN_LABEL } from "@/lib/constants";
 import { getEsgCategoryStats } from "@/actions/content/get-esg-category-stats";
 import { getEsgItemRankings } from "@/actions/content/get-esg-item-rankings";
 import { getEsgOverview } from "@/actions/content/get-esg-overview";
@@ -20,6 +21,7 @@ interface EsgDataPageProps {
 }
 
 const COMPLETION_RANGE_OPTIONS = [
+  { label: "전체 완료율", value: "" },
   { label: "0-25%", value: "0-25" },
   { label: "25-50%", value: "25-50" },
   { label: "50-75%", value: "50-75" },
@@ -27,8 +29,11 @@ const COMPLETION_RANGE_OPTIONS = [
 ];
 
 const PLAN_OPTIONS = [
-  { label: "FREE", value: "FREE" },
-  { label: "PRO", value: "PRO" },
+  { label: "전체 플랜", value: "" },
+  ...Object.entries(PLAN_LABEL).map(([value, label]) => ({
+    label,
+    value,
+  })),
 ];
 
 export default async function EsgDataPage({
@@ -46,14 +51,14 @@ export default async function EsgDataPage({
     getEsgOverview({
       regionId,
       page: page ? parseInt(page, 10) : 1,
-      completionRange: completionRange as
+      completionRange: (completionRange || undefined) as
         | "0-25"
         | "25-50"
         | "50-75"
         | "75-100"
         | undefined,
-      planFilter: plan as "FREE" | "PRO" | undefined,
-      search: search ?? undefined,
+      planFilter: plan || undefined,
+      search: search || undefined,
     }),
   ]);
 

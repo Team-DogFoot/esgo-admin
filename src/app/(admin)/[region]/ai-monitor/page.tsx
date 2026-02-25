@@ -3,6 +3,7 @@ import { Activity, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { getRegion } from "@/lib/regions";
 import { formatDuration } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { AutoRefresh } from "@/components/common/auto-refresh";
 import { PipelineErrorList } from "@/components/ai-monitor/pipeline-error-list";
 import { CreditConsumptionChart } from "@/components/ai-monitor/credit-consumption-chart";
 import { getAiStats } from "@/actions/ai-monitor/get-ai-stats";
@@ -21,7 +22,7 @@ export default async function AiMonitorPage({ params }: AiMonitorPageProps) {
   const [statsResult, errorsResult, consumptionResult] = await Promise.all([
     getAiStats(regionId),
     getPipelineErrors(regionId, 10),
-    getCreditConsumption(regionId, 7),
+    getCreditConsumption({ regionId, days: 7 }),
   ]);
 
   if (!statsResult.success) {
@@ -38,6 +39,7 @@ export default async function AiMonitorPage({ params }: AiMonitorPageProps) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <AutoRefresh intervalMs={30_000} />
       <div className="mb-8">
         <h1 className="text-2xl font-bold">AI 서비스 모니터링</h1>
         <p className="text-sm text-muted-foreground">

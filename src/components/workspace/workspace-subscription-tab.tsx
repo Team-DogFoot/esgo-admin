@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatCurrency } from "@/lib/format";
+import { PLAN_BADGE } from "@/lib/constants";
 import type { WorkspaceSubscriptionData } from "@/actions/workspace/get-workspace-subscription";
 
 interface WorkspaceSubscriptionTabProps {
@@ -29,11 +30,6 @@ const PAYMENT_STATUS_MAP: Record<string, { variant: "success" | "warning" | "err
 const PAYMENT_TYPE_MAP: Record<string, string> = {
   SUBSCRIPTION: "구독",
   CREDIT_PURCHASE: "크레딧 구매",
-};
-
-const PLAN_BADGE: Record<string, string> = {
-  FREE: "bg-gray-100 text-gray-700",
-  PRO: "bg-blue-100 text-blue-700",
 };
 
 export function WorkspaceSubscriptionTab({ data }: WorkspaceSubscriptionTabProps) {
@@ -90,11 +86,11 @@ export function WorkspaceSubscriptionTab({ data }: WorkspaceSubscriptionTabProps
                 </div>
                 <div>
                   <p className="text-muted-foreground">최대 멤버</p>
-                  <p className="font-medium">{data.subscription.plan.maxMembers || "무제한"}</p>
+                  <p className="font-medium">{data.subscription.plan.maxMembers ?? "무제한"}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">최대 문서</p>
-                  <p className="font-medium">{data.subscription.plan.maxDocuments || "무제한"}</p>
+                  <p className="font-medium">{data.subscription.plan.maxDocuments ?? "무제한"}</p>
                 </div>
               </div>
               {data.subscription.canceledAt && (

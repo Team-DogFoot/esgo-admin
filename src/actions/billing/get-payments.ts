@@ -2,8 +2,9 @@
 
 import { z } from "zod";
 import { ok, fail, type ActionResult } from "@/lib/action";
-import { getPrismaClient } from "@/lib/prisma";
+import { getPrismaClient, PaymentStatus } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
+import { getDateRangeFilter } from "@/lib/date-range";
 import { logger } from "@/lib/logger";
 
 const log = logger.child({ module: "get-payments" });
@@ -13,7 +14,7 @@ const schema = z.object({
   page: z.number().int().min(1).optional().default(1),
   perPage: z.number().int().min(1).max(100).optional().default(20),
   search: z.string().optional(),
-  statusFilter: z.string().optional(),
+  statusFilter: z.nativeEnum(PaymentStatus).optional(),
   dateRange: z
     .enum(["this_month", "last_month", "3_months", "all"])
     .optional()
@@ -43,24 +44,8 @@ export interface PaginatedPayments {
   totalPages: number;
 }
 
-function getDateRangeFilter(
-  dateRange: string,
-): { gte: Date } | undefined {
-  const now = new Date();
-  switch (dateRange) {
-    case "this_month":
-      return { gte: new Date(now.getFullYear(), now.getMonth(), 1) };
-    case "last_month":
-      return { gte: new Date(now.getFullYear(), now.getMonth() - 1, 1) };
-    case "3_months":
-      return { gte: new Date(now.getFullYear(), now.getMonth() - 3, 1) };
-    default:
-      return undefined;
-  }
-}
-
 export async function getPayments(
-  input: z.input<typeof schema>,
+  input: Record<string, unknown>,
 ): Promise<ActionResult<PaginatedPayments>> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return fail("잘못된 요청입니다.");
@@ -82,14 +67,7 @@ export async function getPayments(
           name: { contains: search, mode: "insensitive" as const },
         },
       }),
-      ...(statusFilter && {
-        status: statusFilter as
-          | "PENDING"
-          | "PAID"
-          | "FAILED"
-          | "REFUNDED"
-          | "CANCELED",
-      }),
+      ...(statusFilter && { status: statusFilter }),
       ...(dateFilter && { createdAt: dateFilter }),
     };
 
