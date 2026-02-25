@@ -1,7 +1,13 @@
 import { redirect } from "next/navigation";
-import { Activity } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Activity, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { getRegion } from "@/lib/regions";
+import { formatDuration } from "@/lib/format";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { PipelineErrorList } from "@/components/ai-monitor/pipeline-error-list";
+import { CreditConsumptionChart } from "@/components/ai-monitor/credit-consumption-chart";
+import { getAiStats } from "@/actions/ai-monitor/get-ai-stats";
+import { getPipelineErrors } from "@/actions/ai-monitor/get-pipeline-errors";
+import { getCreditConsumption } from "@/actions/ai-monitor/get-credit-consumption";
 
 interface AiMonitorPageProps {
   params: Promise<{ region: string }>;
@@ -12,37 +18,71 @@ export default async function AiMonitorPage({ params }: AiMonitorPageProps) {
   const region = getRegion(regionId);
   if (!region) redirect("/");
 
+  const [statsResult, errorsResult, consumptionResult] = await Promise.all([
+    getAiStats(regionId),
+    getPipelineErrors(regionId, 10),
+    getCreditConsumption(regionId, 7),
+  ]);
+
+  if (!statsResult.success) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {statsResult.error}
+        </div>
+      </div>
+    );
+  }
+
+  const stats = statsResult.data;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6">
+      <div className="mb-8">
         <h1 className="text-2xl font-bold">AI 서비스 모니터링</h1>
         <p className="text-sm text-muted-foreground">
           {region.flag} {region.name} — AI 파이프라인 사용 현황
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-muted-foreground" />
-            <CardTitle>준비 중</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            AI 기능별 요청 비용, 사용 토큰 수집이 구현된 후 이 페이지에 모니터링 데이터가 표시됩니다.
-          </p>
-          <div className="mt-4 text-sm text-muted-foreground">
-            <p>향후 표시 예정:</p>
-            <ul className="ml-4 mt-2 list-disc space-y-1">
-              <li>파이프라인 실행 횟수 및 성공/실패 비율</li>
-              <li>AI 기능별 (전처리/분류/추출/보고서) 크레딧 소비 추이</li>
-              <li>요청별 토큰 사용량 및 비용</li>
-              <li>평균 응답 시간</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="오늘 파이프라인"
+          value={stats.todayPipelines}
+          icon={Activity}
+          description="오늘 시작된 세션 수"
+        />
+        <StatCard
+          title="성공률"
+          value={`${stats.successRate}%`}
+          icon={CheckCircle}
+          description="전체 완료 비율"
+        />
+        <StatCard
+          title="에러 세션"
+          value={stats.errorSessions}
+          icon={AlertTriangle}
+          description="최근 7일 에러 발생"
+        />
+        <StatCard
+          title="평균 소요 시간"
+          value={stats.avgDurationMs > 0 ? formatDuration(stats.avgDurationMs) : "-"}
+          icon={Clock}
+          description="완료된 세션 기준"
+        />
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {errorsResult.success && (
+          <PipelineErrorList errors={errorsResult.data} />
+        )}
+        {consumptionResult.success && (
+          <CreditConsumptionChart
+            data={consumptionResult.data}
+            title="크레딧 소비 추이 (7일)"
+          />
+        )}
+      </div>
     </div>
   );
 }
