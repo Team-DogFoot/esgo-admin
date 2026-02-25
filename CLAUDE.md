@@ -56,7 +56,7 @@ src/app/                  App Router 페이지
   api/auth/               NextAuth API 라우트
 src/components/           UI 컴포넌트
   layout/                 admin-sidebar, sidebar-nav, region-selector, user-menu
-  common/                 status-badge, pagination, filter-bar
+  common/                 status-badge, pagination, filter-bar, auto-refresh
   dashboard/              stat-card, plan-distribution
   user/                   user-table, user-detail
   workspace/              workspace-table, workspace-detail (7탭), batch-credit-dialog
@@ -79,8 +79,13 @@ src/lib/                  싱글턴 인프라
   logger.ts               Pino 로거
   action.ts               ActionResult<T>, ok(), fail()
   format.ts               formatCurrency, formatNumber, formatFileSize, formatDuration, formatRelativeTime
+  constants.ts            PLAN_BADGE, PLAN_LABEL (플랜 뱃지/라벨 상수)
+  date-range.ts           getDateRangeFilter() (공유 날짜 필터)
+  activity.ts             getActivityStatus() (사용자 활동 상태 판별)
   utils.ts                cn()
-src/types/                next-auth.d.ts (세션 타입 확장)
+src/types/
+  next-auth.d.ts          세션 타입 확장
+  credit.ts               DailyConsumption (공유 타입)
 prisma/{regionId}/        리전별 Prisma 스키마 + config
 ```
 
@@ -127,7 +132,7 @@ import { logger } from "@/lib/logger";
 const log = logger.child({ module: "모듈명" });
 const schema = z.object({ regionId: z.string(), /* ... */ });
 
-export async function myAction(input: z.infer<typeof schema>): Promise<ActionResult<T>> {
+export async function myAction(input: Record<string, unknown>): Promise<ActionResult<T>> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return fail("잘못된 요청입니다.");
 
@@ -231,10 +236,10 @@ export function MyComponent({ regionId }: Props) {
 - 하드코딩 금지. 단, 도메인 컬러는 예외:
 
 ```typescript
-// 플랜 뱃지
+// 플랜 뱃지 (src/lib/constants.ts)
 FREE: "bg-gray-100 text-gray-700"
-PRO: "bg-indigo-100 text-indigo-700"
 STANDARD: "bg-blue-100 text-blue-700"
+PRO: "bg-indigo-100 text-indigo-700"
 ENTERPRISE: "bg-purple-100 text-purple-700"
 ```
 
@@ -292,15 +297,24 @@ log.debug({ count: items.length }, "result");   // DB 결과, 중간값
 User ──< WorkspaceMember >── Workspace ──< Document
                                   │    ├──< EsgSummary
                                   │    ├──< CreditLedger
+                                  │    ├──< PipelineSession
                                   │    ├──< Subscription ──< Plan
                                   │    └──< Payment
 
-Workspace: creditBalance (Int), planCode (FREE/PRO/STANDARD/ENTERPRISE)
+PlanCode: FREE | STANDARD | PRO | ENTERPRISE
+Workspace: creditBalance (Int), planCode (PlanCode)
 CreditLedger: amount, balance, type (INITIAL/MONTHLY/PURCHASE/CONSUME/REFUND/ADMIN)
 EsgSummary: esgItemCode, status (NOT_STARTED/IN_PROGRESS/COMPLETED)
-Plan: code, monthlyPrice, initialCredits, monthlyCredits, maxMembers, maxDocuments
-Subscription: workspaceId (1:1), status, currentPeriodStart/End
+PipelineSession: currentPhase, state, creditUsed
+Plan: code (PlanCode), monthlyPrice, initialCredits, monthlyCredits, maxMembers, maxDocuments
+Subscription: workspaceId (1:1), status (ACTIVE/CANCELED/PAST_DUE/EXPIRED), currentPeriodStart/End
+Payment: status (PENDING/PAID/FAILED/REFUNDED/CANCELED), amount, paidAt
 ```
+
+### Prisma enum re-export
+
+`src/lib/prisma.ts`에서 `PlanCode`, `CreditType`, `PaymentStatus`, `SubscriptionStatus`를 re-export.
+Server Action에서 `z.nativeEnum(PlanCode)` 등으로 런타임 검증. 입력 타입은 `Record<string, unknown>` 사용 (URL searchParams는 항상 string이므로 Zod safeParse가 런타임 변환 담당).
 
 ## 상태 관리
 
