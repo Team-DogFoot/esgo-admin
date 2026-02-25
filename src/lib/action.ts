@@ -1,5 +1,3 @@
-"use server";
-
 import { auth } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import type { AppLogger } from "@/lib/logger";
