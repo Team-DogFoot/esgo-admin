@@ -32,19 +32,44 @@ npm run db:generate:kr   # 한국 리전 Prisma 클라이언트 생성
 src/proxy.ts              인증 미들웨어 (NextAuth, ADMIN_EMAILS 체크)
 src/actions/              Server Actions (도메인별 폴더, 함수당 1파일)
   dashboard/              get-region-stats
-  user/                   get-users
+  user/                   get-users, get-user-detail
   workspace/              get-workspaces, get-workspace-detail, adjust-credit, change-plan
+                          get-workspace-documents, get-workspace-esg, get-workspace-pipelines
+                          get-workspace-subscription, batch-adjust-credits
+  billing/                get-billing-stats, get-subscriptions, get-payments
+                          get-credit-ledger, get-credit-consumption
+  ai-monitor/             get-ai-stats, get-pipelines, get-pipeline-errors
+                          get-credit-by-workspace, get-credit-by-feature, get-credit-consumption
+  content/                get-content-stats, get-documents, get-reports
+                          get-esg-overview, get-esg-category-stats, get-esg-item-rankings
 src/app/                  App Router 페이지
   (admin)/                관리자 레이아웃 (인증 필수)
     page.tsx              홈 — 리전 선택
-    [region]/             리전별 라우트 (대시보드, 사용자, 워크스페이스, AI 모니터)
+    [region]/             리전별 라우트
+      page.tsx            대시보드
+      users/              사용자 목록 + [id] 상세
+      workspaces/         워크스페이스 목록 + [id] 상세 (7탭)
+      billing/            빌링 대시보드 + subscriptions, payments, credits
+      ai-monitor/         AI 대시보드 + pipelines, credits
+      content/            콘텐츠 대시보드 + documents, esg-data, reports
   (auth)/login/           로그인 페이지
   api/auth/               NextAuth API 라우트
 src/components/           UI 컴포넌트
-  layout/                 admin-sidebar, region-selector, user-menu
+  layout/                 admin-sidebar, sidebar-nav, region-selector, user-menu
+  common/                 status-badge, pagination, filter-bar
   dashboard/              stat-card, plan-distribution
-  user/                   user-table
-  workspace/              workspace-table, workspace-detail, credit-adjust-form, plan-change-form, member-list
+  user/                   user-table, user-detail
+  workspace/              workspace-table, workspace-detail (7탭), batch-credit-dialog
+                          workspace-documents-tab, workspace-esg-tab
+                          workspace-pipelines-tab, workspace-subscription-tab
+  billing/                subscription-table, payment-table, credit-ledger-table
+                          credit-consumption-chart
+  ai-monitor/             pipeline-table, pipeline-error-list
+                          credit-by-workspace-chart, credit-by-feature-chart
+                          credit-consumption-chart, credit-consumption-trend-chart
+  content/                document-table, esg-overview-table, report-table
+                          esg-category-stats, esg-item-rankings
+                          esg-completion-chart, data-source-chart
   ui/                     shadcn/ui 컴포넌트
 src/lib/                  싱글턴 인프라
   auth.ts / auth.config.ts  NextAuth (Google OAuth, JWT, ADMIN_EMAILS)
@@ -53,6 +78,7 @@ src/lib/                  싱글턴 인프라
   env.ts                  환경 변수 검증 (Zod)
   logger.ts               Pino 로거
   action.ts               ActionResult<T>, ok(), fail()
+  format.ts               formatCurrency, formatNumber, formatFileSize, formatDuration, formatRelativeTime
   utils.ts                cn()
 src/types/                next-auth.d.ts (세션 타입 확장)
 prisma/{regionId}/        리전별 Prisma 스키마 + config
