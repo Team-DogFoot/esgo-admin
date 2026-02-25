@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -37,11 +37,10 @@ export function FilterBar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [searchValue, setSearchValue] = useState(searchParams.get("search") ?? "");
-
-  useEffect(() => {
-    setSearchValue(searchParams.get("search") ?? "");
-  }, [searchParams]);
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get("search") ?? "",
+  );
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateParam = useCallback(
     (key: string, value: string) => {
@@ -57,15 +56,16 @@ export function FilterBar({
     [router, pathname, searchParams],
   );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const current = searchParams.get("search") ?? "";
-      if (searchValue !== current) {
-        updateParam("search", searchValue);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchValue, searchParams, updateParam]);
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchValue(value);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        updateParam("search", value);
+      }, 300);
+    },
+    [updateParam],
+  );
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -75,7 +75,7 @@ export function FilterBar({
           <Input
             placeholder={searchPlaceholder}
             value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-8"
           />
         </div>
