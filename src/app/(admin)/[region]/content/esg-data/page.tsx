@@ -21,7 +21,7 @@ interface EsgDataPageProps {
 }
 
 const COMPLETION_RANGE_OPTIONS = [
-  { label: "전체 완료율", value: "" },
+  { label: "전체 완료율", value: "ALL" },
   { label: "0-25%", value: "0-25" },
   { label: "25-50%", value: "25-50" },
   { label: "50-75%", value: "50-75" },
@@ -29,7 +29,7 @@ const COMPLETION_RANGE_OPTIONS = [
 ];
 
 const PLAN_OPTIONS = [
-  { label: "전체 플랜", value: "" },
+  { label: "전체 플랜", value: "ALL" },
   ...Object.entries(PLAN_LABEL).map(([value, label]) => ({
     label,
     value,
