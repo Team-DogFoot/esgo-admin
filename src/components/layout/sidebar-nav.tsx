@@ -62,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: "대시보드", href: "/ai-monitor", icon: PieChart },
       { label: "파이프라인", href: "/ai-monitor/pipelines", icon: ListChecks },
       { label: "크레딧 분석", href: "/ai-monitor/credits", icon: Coins },
+      { label: "사용량 로그", href: "/ai-monitor/usage-logs", icon: Database },
     ],
   },
   {
