@@ -79,7 +79,7 @@ src/lib/                  싱글턴 인프라
   env.ts                  환경 변수 검증 (Zod)
   logger.ts               Pino 로거
   action.ts               ActionResult<T>, ok(), fail()
-  format.ts               formatCurrency, formatNumber, formatFileSize, formatDuration, formatRelativeTime
+  format.ts               formatCurrency, formatNumber, formatFileSize, formatDuration, formatTokens, formatCostUsd, formatRelativeTime
   constants.ts            PLAN_BADGE, PLAN_LABEL (플랜 뱃지/라벨 상수)
   date-range.ts           getDateRangeFilter() (공유 날짜 필터)
   activity.ts             getActivityStatus() (사용자 활동 상태 판별)

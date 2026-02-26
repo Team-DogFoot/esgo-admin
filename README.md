@@ -83,7 +83,7 @@ src/
 │   ├── regions.ts              # 리전 설정 (REGIONS 환경 변수 파싱)
 │   ├── logger.ts               # Pino 로거 싱글턴
 │   ├── action.ts               # ActionResult<T>, ok(), fail()
-│   ├── format.ts               # formatCurrency, formatNumber, formatFileSize, formatDuration, formatRelativeTime
+│   ├── format.ts               # formatCurrency, formatNumber, formatFileSize, formatDuration, formatTokens, formatCostUsd, formatRelativeTime
 │   ├── constants.ts            # PLAN_BADGE, PLAN_LABEL (공유 상수)
 │   ├── date-range.ts           # getDateRangeFilter() (공유 날짜 필터)
 │   ├── activity.ts             # getActivityStatus() (사용자 활동 상태)
