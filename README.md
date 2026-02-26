@@ -109,7 +109,8 @@ User ──< WorkspaceMember >── Workspace ──< Document
                                   │    ├──< CreditLedger
                                   │    ├──< PipelineSession
                                   │    ├──< Subscription ──< Plan
-                                  │    └──< Payment
+                                  │    ├──< Payment
+                                  │    └──< AiUsageLog
 ```
 
 ### 주요 모델 (어드민에서 조회·관리)
@@ -126,6 +127,7 @@ User ──< WorkspaceMember >── Workspace ──< Document
 | `Plan` | 플랜 정의 (FREE/STANDARD/PRO/ENTERPRISE) |
 | `Subscription` | 워크스페이스 구독 (1:1, ACTIVE/CANCELED/PAST_DUE/EXPIRED) |
 | `Payment` | 결제 내역 (PENDING/PAID/FAILED/REFUNDED/CANCELED) |
+| `AiUsageLog` | AI API 사용량 로그 (provider, operation, tokens, cost, success) |
 
 ---
 

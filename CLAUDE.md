@@ -299,7 +299,8 @@ User ──< WorkspaceMember >── Workspace ──< Document
                                   │    ├──< CreditLedger
                                   │    ├──< PipelineSession
                                   │    ├──< Subscription ──< Plan
-                                  │    └──< Payment
+                                  │    ├──< Payment
+                                  │    └──< AiUsageLog
 
 PlanCode: FREE | STANDARD | PRO | ENTERPRISE
 Workspace: creditBalance (Int), planCode (PlanCode)
@@ -309,6 +310,7 @@ PipelineSession: currentPhase, state, creditUsed
 Plan: code (PlanCode), monthlyPrice, initialCredits, monthlyCredits, maxMembers, maxDocuments
 Subscription: workspaceId (1:1), status (ACTIVE/CANCELED/PAST_DUE/EXPIRED), currentPeriodStart/End
 Payment: status (PENDING/PAID/FAILED/REFUNDED/CANCELED), amount, paidAt
+AiUsageLog: workspaceId, provider (GEMINI/DOCUMENT_AI/CLOUD_VISION), model, operation, totalTokens, estimatedCostUsd, success
 ```
 
 ### Prisma enum re-export
