@@ -40,6 +40,7 @@ src/actions/              Server Actions (도메인별 폴더, 함수당 1파일
                           get-credit-ledger, get-credit-consumption
   ai-monitor/             get-ai-stats, get-pipelines, get-pipeline-errors
                           get-credit-by-workspace, get-credit-by-feature, get-credit-consumption
+                          get-usage-logs, get-usage-stats
   content/                get-content-stats, get-documents, get-reports
                           get-esg-overview, get-esg-category-stats, get-esg-item-rankings
 src/app/                  App Router 페이지
@@ -50,7 +51,7 @@ src/app/                  App Router 페이지
       users/              사용자 목록 + [id] 상세
       workspaces/         워크스페이스 목록 + [id] 상세 (7탭)
       billing/            빌링 대시보드 + subscriptions, payments, credits
-      ai-monitor/         AI 대시보드 + pipelines, credits
+      ai-monitor/         AI 대시보드 + pipelines, credits, usage-logs
       content/            콘텐츠 대시보드 + documents, esg-data, reports
   (auth)/login/           로그인 페이지
   api/auth/               NextAuth API 라우트
@@ -64,7 +65,7 @@ src/components/           UI 컴포넌트
                           workspace-pipelines-tab, workspace-subscription-tab
   billing/                subscription-table, payment-table, credit-ledger-table
                           credit-consumption-chart
-  ai-monitor/             pipeline-table, pipeline-error-list
+  ai-monitor/             pipeline-table, pipeline-error-list, usage-log-table
                           credit-by-workspace-chart, credit-by-feature-chart
                           credit-consumption-chart, credit-consumption-trend-chart
   content/                document-table, esg-overview-table, report-table

@@ -5,7 +5,7 @@ import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { ValidationError } from "@/lib/errors";
-import type { AiProvider } from "@prisma/client";
+import type { AiProvider } from "@/lib/prisma";
 
 const schema = z.object({
   regionId: z.string(),
