@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/common/status-badge";
-import { formatDuration, formatRelativeTime } from "@/lib/format";
+import { formatCostUsd, formatDuration, formatRelativeTime, formatTokens } from "@/lib/format";
 import type { PipelineListItem } from "@/actions/ai-monitor/get-pipelines";
 
 interface PipelineTableProps {
@@ -45,6 +45,9 @@ export function PipelineTable({ pipelines, regionId }: PipelineTableProps) {
             <TableHead>문서</TableHead>
             <TableHead>단계</TableHead>
             <TableHead>자동</TableHead>
+            <TableHead className="text-right">토큰</TableHead>
+            <TableHead className="text-right">비용</TableHead>
+            <TableHead className="text-right">API</TableHead>
             <TableHead className="text-right">에러</TableHead>
             <TableHead className="text-right">소요 시간</TableHead>
             <TableHead>시작</TableHead>
@@ -77,6 +80,15 @@ export function PipelineTable({ pipelines, regionId }: PipelineTableProps) {
                 {p.autoMode && (
                   <Zap className="h-4 w-4 text-yellow-500" />
                 )}
+              </TableCell>
+              <TableCell className="text-right text-sm text-muted-foreground">
+                {p.totalTokens > 0 ? formatTokens(p.totalTokens) : "-"}
+              </TableCell>
+              <TableCell className="text-right text-sm text-muted-foreground">
+                {p.estimatedCostUsd > 0 ? formatCostUsd(p.estimatedCostUsd) : "-"}
+              </TableCell>
+              <TableCell className="text-right text-sm text-muted-foreground">
+                {p.apiCallCount > 0 ? p.apiCallCount : "-"}
               </TableCell>
               <TableCell className="text-right">
                 {p.errorCount > 0 ? (

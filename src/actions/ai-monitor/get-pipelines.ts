@@ -29,6 +29,9 @@ export interface PipelineListItem {
   durationMs: number | null;
   startedAt: Date;
   completedAt: Date | null;
+  totalTokens: number;
+  estimatedCostUsd: number;
+  apiCallCount: number;
 }
 
 export interface PaginatedPipelines {
@@ -88,21 +91,44 @@ export const getPipelines = createAction(
       }),
     ]);
 
-    const items: PipelineListItem[] = sessions.map((s) => ({
-      id: s.id,
-      sessionId: s.sessionId,
-      workspaceId: s.workspaceId,
-      workspaceName: s.Workspace.name,
-      documentId: s.documentId,
-      documentName: s.Document.fileName,
-      currentPhase: s.currentPhase,
-      autoMode: s.autoMode,
-      errorCount: s.errorCount,
-      lastError: s.lastError,
-      durationMs: s.durationMs,
-      startedAt: s.startedAt,
-      completedAt: s.completedAt,
-    }));
+    const sessionIds = sessions.map((s) => s.id);
+
+    const usageBySession = sessionIds.length > 0
+      ? await prisma.aiUsageLog.groupBy({
+          by: ["pipelineSessionId"],
+          where: { pipelineSessionId: { in: sessionIds } },
+          _sum: { totalTokens: true, estimatedCostUsd: true },
+          _count: true,
+        })
+      : [];
+
+    const usageMap = new Map(
+      usageBySession
+        .filter((u) => u.pipelineSessionId != null)
+        .map((u) => [u.pipelineSessionId!, u]),
+    );
+
+    const items: PipelineListItem[] = sessions.map((s) => {
+      const usage = usageMap.get(s.id);
+      return {
+        id: s.id,
+        sessionId: s.sessionId,
+        workspaceId: s.workspaceId,
+        workspaceName: s.Workspace.name,
+        documentId: s.documentId,
+        documentName: s.Document.fileName,
+        currentPhase: s.currentPhase,
+        autoMode: s.autoMode,
+        errorCount: s.errorCount,
+        lastError: s.lastError,
+        durationMs: s.durationMs,
+        startedAt: s.startedAt,
+        completedAt: s.completedAt,
+        totalTokens: usage?._sum.totalTokens ?? 0,
+        estimatedCostUsd: usage?._sum.estimatedCostUsd ?? 0,
+        apiCallCount: usage?._count ?? 0,
+      };
+    });
 
     const totalPages = Math.ceil(total / perPage);
 
