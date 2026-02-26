@@ -1,9 +1,12 @@
 "use server";
 
+import { z } from "zod";
 import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { ValidationError } from "@/lib/errors";
+
+const schema = z.object({ regionId: z.string() });
 
 export interface UsageStats {
   totalRequests: number;
@@ -14,7 +17,11 @@ export interface UsageStats {
 
 export const getUsageStats = createAction(
   { module: "get-usage-stats" },
-  async (_session, regionId: string): Promise<UsageStats> => {
+  async (_session, input: z.input<typeof schema>): Promise<UsageStats> => {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
+
+    const { regionId } = parsed.data;
     const region = getRegion(regionId);
     if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 

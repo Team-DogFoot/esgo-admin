@@ -58,7 +58,7 @@ export default async function UsageLogsPage({ params, searchParams }: UsageLogsP
       success: success as "true" | "false" | undefined,
       search: search ?? undefined,
     }),
-    getUsageStats(regionId),
+    getUsageStats({ regionId }),
   ]);
 
   return (
