@@ -144,10 +144,22 @@ function CollapsibleNavItem({
   linkClasses,
 }: CollapsibleNavItemProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [prevDefaultOpen, setPrevDefaultOpen] = useState(defaultOpen);
+
+  if (defaultOpen !== prevDefaultOpen) {
+    setPrevDefaultOpen(defaultOpen);
+    setOpen(defaultOpen);
+  }
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+      <CollapsibleTrigger
+        className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors ${
+          defaultOpen
+            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+            : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        }`}
+      >
         <item.icon className="h-4 w-4" />
         <span className="flex-1 text-left">{item.label}</span>
         <ChevronDown
