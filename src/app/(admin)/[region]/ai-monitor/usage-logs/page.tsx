@@ -5,6 +5,7 @@ import { FilterBar } from "@/components/common/filter-bar";
 import { Pagination } from "@/components/common/pagination";
 import { UsageLogTable } from "@/components/ai-monitor/usage-log-table";
 import { getRegion } from "@/lib/regions";
+import { formatCostUsd, formatTokens } from "@/lib/format";
 import { getUsageLogs } from "@/actions/ai-monitor/get-usage-logs";
 import { getUsageStats } from "@/actions/ai-monitor/get-usage-stats";
 
@@ -30,16 +31,6 @@ const STATUS_FILTER_OPTIONS = [
   { label: "성공", value: "true" },
   { label: "실패", value: "false" },
 ];
-
-function formatTokens(count: number): string {
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
-  return String(count);
-}
-
-function formatCost(usd: number): string {
-  return `$${usd.toFixed(4)}`;
-}
 
 export default async function UsageLogsPage({ params, searchParams }: UsageLogsPageProps) {
   const { region: regionId } = await params;
@@ -90,7 +81,7 @@ export default async function UsageLogsPage({ params, searchParams }: UsageLogsP
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCost(statsResult.data.totalCostUsd)}
+                {formatCostUsd(statsResult.data.totalCostUsd)}
               </div>
             </CardContent>
           </Card>
@@ -131,7 +122,7 @@ export default async function UsageLogsPage({ params, searchParams }: UsageLogsP
 
       {result.success ? (
         <>
-          <UsageLogTable logs={result.data.items} regionId={regionId} />
+          <UsageLogTable logs={result.data.items} />
           <Pagination
             page={result.data.page}
             totalPages={result.data.totalPages}

@@ -7,12 +7,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDuration, formatRelativeTime } from "@/lib/format";
+import { formatCostUsd, formatDuration, formatRelativeTime, formatTokens } from "@/lib/format";
 import type { UsageLogItem } from "@/actions/ai-monitor/get-usage-logs";
 
 interface UsageLogTableProps {
   logs: UsageLogItem[];
-  regionId: string;
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -43,16 +42,6 @@ function getOperationLabel(operation: string): string {
     return `추출 (${code})`;
   }
   return operation;
-}
-
-function formatTokens(count: number): string {
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
-  return String(count);
-}
-
-function formatCost(usd: number): string {
-  return `$${usd.toFixed(4)}`;
 }
 
 export function UsageLogTable({ logs }: UsageLogTableProps) {
@@ -105,7 +94,7 @@ export function UsageLogTable({ logs }: UsageLogTableProps) {
               </TableCell>
               <TableCell className="text-right text-sm text-muted-foreground">
                 {log.estimatedCostUsd != null
-                  ? formatCost(log.estimatedCostUsd)
+                  ? formatCostUsd(log.estimatedCostUsd)
                   : "-"}
               </TableCell>
               <TableCell className="text-right text-sm text-muted-foreground">

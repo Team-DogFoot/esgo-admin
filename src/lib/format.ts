@@ -19,6 +19,16 @@ export function formatDuration(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+export function formatTokens(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
+  return String(count);
+}
+
+export function formatCostUsd(usd: number): string {
+  return `$${usd.toFixed(4)}`;
+}
+
 export function formatRelativeTime(date: Date): string {
   const now = Date.now();
   const diff = now - new Date(date).getTime();
