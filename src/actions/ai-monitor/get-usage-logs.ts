@@ -5,11 +5,12 @@ import { createAction } from "@/lib/action";
 import { getPrismaClient } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
 import { ValidationError } from "@/lib/errors";
+import type { AiProvider } from "@prisma/client";
 
 const schema = z.object({
   regionId: z.string(),
-  page: z.number().int().min(1).default(1),
-  perPage: z.number().int().min(1).max(100).default(20),
+  page: z.coerce.number().int().min(1).default(1),
+  perPage: z.coerce.number().int().min(1).max(100).default(20),
   provider: z.enum(["GEMINI", "DOCUMENT_AI", "CLOUD_VISION"]).optional(),
   success: z.enum(["true", "false"]).optional(),
   search: z.string().optional(),
@@ -17,26 +18,17 @@ const schema = z.object({
 
 export interface UsageLogItem {
   id: string;
-  workspaceId: string;
-  workspaceName: string;
-  provider: string;
-  model: string | null;
+  provider: AiProvider;
   operation: string;
-  promptTokens: number | null;
-  candidateTokens: number | null;
+  model: string | null;
   totalTokens: number | null;
-  cachedTokens: number | null;
-  cacheTokenCount: number | null;
-  cacheTtlSeconds: number | null;
   pageCount: number | null;
   imageCount: number | null;
   estimatedCostUsd: number | null;
-  documentId: string | null;
-  pipelineSessionId: string | null;
   durationMs: number | null;
   success: boolean;
-  errorMessage: string | null;
   createdAt: Date;
+  workspaceName: string;
 }
 
 export interface PaginatedUsageLogs {
@@ -93,26 +85,17 @@ export const getUsageLogs = createAction(
 
     const items: UsageLogItem[] = logs.map((log) => ({
       id: log.id,
-      workspaceId: log.workspaceId,
-      workspaceName: log.Workspace.name,
       provider: log.provider,
-      model: log.model,
       operation: log.operation,
-      promptTokens: log.promptTokens,
-      candidateTokens: log.candidateTokens,
+      model: log.model,
       totalTokens: log.totalTokens,
-      cachedTokens: log.cachedTokens,
-      cacheTokenCount: log.cacheTokenCount,
-      cacheTtlSeconds: log.cacheTtlSeconds,
       pageCount: log.pageCount,
       imageCount: log.imageCount,
       estimatedCostUsd: log.estimatedCostUsd,
-      documentId: log.documentId,
-      pipelineSessionId: log.pipelineSessionId,
       durationMs: log.durationMs,
       success: log.success,
-      errorMessage: log.errorMessage,
       createdAt: log.createdAt,
+      workspaceName: log.Workspace.name,
     }));
 
     const totalPages = Math.ceil(total / perPage);
