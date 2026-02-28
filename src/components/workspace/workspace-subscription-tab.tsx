@@ -77,14 +77,6 @@ export function WorkspaceSubscriptionTab({ data }: WorkspaceSubscriptionTabProps
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <div>
-                  <p className="text-muted-foreground">초기 크레딧</p>
-                  <p className="font-medium">{data.subscription.plan.initialCredits}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">월 크레딧</p>
-                  <p className="font-medium">{data.subscription.plan.monthlyCredits}</p>
-                </div>
-                <div>
                   <p className="text-muted-foreground">최대 멤버</p>
                   <p className="font-medium">{data.subscription.plan.maxMembers ?? "무제한"}</p>
                 </div>

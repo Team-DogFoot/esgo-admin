@@ -193,18 +193,16 @@ model EsgSummary {
 }
 
 model Plan {
-  id             String         @id @default(cuid())
-  code           PlanCode       @unique
-  name           String
-  monthlyPrice   Int
-  initialCredits Int
-  monthlyCredits Int
-  features       Json           @default("[]")
-  maxMembers     Int            @default(0)
-  maxDocuments   Int            @default(0)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime
-  subscriptions  Subscription[]
+  id            String         @id @default(cuid())
+  code          PlanCode       @unique
+  name          String
+  monthlyPrice  Int
+  features      Json           @default("[]")
+  maxMembers    Int            @default(0)
+  maxDocuments  Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  subscriptions Subscription[]
 }
 
 model Subscription {

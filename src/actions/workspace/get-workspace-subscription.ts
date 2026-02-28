@@ -15,8 +15,6 @@ export interface SubscriptionInfo {
     code: string;
     name: string;
     monthlyPrice: number;
-    initialCredits: number;
-    monthlyCredits: number;
     maxMembers: number;
     maxDocuments: number;
   };
@@ -53,8 +51,6 @@ export const getWorkspaceSubscription = createAction(
             code: true,
             name: true,
             monthlyPrice: true,
-            initialCredits: true,
-            monthlyCredits: true,
             maxMembers: true,
             maxDocuments: true,
           },
@@ -79,8 +75,6 @@ export const getWorkspaceSubscription = createAction(
             code: subscription.plan.code,
             name: subscription.plan.name,
             monthlyPrice: subscription.plan.monthlyPrice,
-            initialCredits: subscription.plan.initialCredits,
-            monthlyCredits: subscription.plan.monthlyCredits,
             maxMembers: subscription.plan.maxMembers,
             maxDocuments: subscription.plan.maxDocuments,
           },
