@@ -77,7 +77,7 @@ export function WorkspaceTable({ workspaces, regionId }: WorkspaceTableProps) {
               </TableHead>
               <TableHead>이름</TableHead>
               <TableHead>플랜</TableHead>
-              <TableHead className="text-right">크레딧</TableHead>
+              <TableHead className="text-right">분석/리포트</TableHead>
               <TableHead className="text-right">멤버</TableHead>
               <TableHead className="text-right">문서</TableHead>
               <TableHead className="text-right">ESG 완료</TableHead>
@@ -102,7 +102,7 @@ export function WorkspaceTable({ workspaces, regionId }: WorkspaceTableProps) {
                 <TableCell>
                   <Badge className={PLAN_BADGE[ws.planCode] ?? PLAN_BADGE.FREE}>{PLAN_LABEL[ws.planCode] ?? ws.planCode}</Badge>
                 </TableCell>
-                <TableCell className="text-right">{ws.creditBalance.toLocaleString()}</TableCell>
+                <TableCell className="text-right">{ws.analysisUsed}/{ws.reportUsed}</TableCell>
                 <TableCell className="text-right">{ws.memberCount}</TableCell>
                 <TableCell className="text-right">{ws.documentCount}</TableCell>
                 <TableCell className="text-right">{ws.esgCompletedCount}/{ws.esgTotalCount}</TableCell>

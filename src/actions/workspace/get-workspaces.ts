@@ -10,7 +10,10 @@ export interface WorkspaceListItem {
   id: string;
   name: string;
   planCode: string;
-  creditBalance: number;
+  analysisUsed: number;
+  reportUsed: number;
+  bonusAnalysis: number;
+  bonusReport: number;
   memberCount: number;
   documentCount: number;
   esgCompletedCount: number;
@@ -61,7 +64,10 @@ export const getWorkspaces = createAction(
       id: ws.id,
       name: ws.name,
       planCode: ws.planCode,
-      creditBalance: ws.creditBalance,
+      analysisUsed: ws.analysisUsed,
+      reportUsed: ws.reportUsed,
+      bonusAnalysis: ws.bonusAnalysis,
+      bonusReport: ws.bonusReport,
       memberCount: ws._count.members,
       documentCount: ws._count.documents,
       esgCompletedCount: ws.esgSummaries.length,

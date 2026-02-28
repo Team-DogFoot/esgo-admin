@@ -10,7 +10,10 @@ export interface WorkspaceDetail {
   name: string;
   businessNumber: string;
   planCode: string;
-  creditBalance: number;
+  analysisUsed: number;
+  reportUsed: number;
+  bonusAnalysis: number;
+  bonusReport: number;
   createdAt: Date;
   members: {
     id: string;
@@ -50,10 +53,6 @@ export const getWorkspaceDetail = createAction(
           include: { user: { select: { name: true, email: true } } },
           orderBy: { joinedAt: "asc" },
         },
-        creditLedgers: {
-          orderBy: { createdAt: "desc" },
-          take: 20,
-        },
         esgSummaries: {
           select: { status: true },
         },
@@ -71,7 +70,10 @@ export const getWorkspaceDetail = createAction(
       name: workspace.name,
       businessNumber: workspace.businessNumber,
       planCode: workspace.planCode,
-      creditBalance: workspace.creditBalance,
+      analysisUsed: workspace.analysisUsed,
+      reportUsed: workspace.reportUsed,
+      bonusAnalysis: workspace.bonusAnalysis,
+      bonusReport: workspace.bonusReport,
       createdAt: workspace.createdAt,
       members: workspace.members.map((m) => ({
         id: m.id,
@@ -81,14 +83,8 @@ export const getWorkspaceDetail = createAction(
         role: m.role,
         joinedAt: m.joinedAt,
       })),
-      recentCredits: workspace.creditLedgers.map((cl) => ({
-        id: cl.id,
-        amount: cl.amount,
-        balance: cl.balance,
-        type: cl.type,
-        reason: cl.reason,
-        createdAt: cl.createdAt,
-      })),
+      // CreditLedger 모델이 제거되어 빈 배열을 반환합니다.
+      recentCredits: [],
       esgProgress: { total: esgTotal, completed: esgCompleted, inProgress: esgInProgress },
     };
   },

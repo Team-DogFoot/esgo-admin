@@ -25,7 +25,6 @@ export const getRegionStats = createAction(
     const [
       totalWorkspaces,
       activeUsers,
-      creditAgg,
       totalDocuments,
       planGroups,
       esgTotal,
@@ -36,10 +35,6 @@ export const getRegionStats = createAction(
         where: {
           updatedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         },
-      }),
-      prisma.creditLedger.aggregate({
-        _sum: { amount: true },
-        where: { type: "CONSUME" },
       }),
       prisma.document.count(),
       prisma.workspace.groupBy({
@@ -53,9 +48,10 @@ export const getRegionStats = createAction(
     return {
       totalWorkspaces,
       activeUsers,
-      totalCreditsConsumed: Math.abs(creditAgg._sum.amount ?? 0),
+      // CreditLedger 모델이 제거되어 0을 반환합니다.
+      totalCreditsConsumed: 0,
       totalDocuments,
-      planDistribution: planGroups.map((g) => ({
+      planDistribution: planGroups.map((g: { planCode: string; _count: { id: number } }) => ({
         planCode: g.planCode,
         count: g._count.id,
       })),

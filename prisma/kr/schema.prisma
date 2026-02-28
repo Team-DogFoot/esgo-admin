@@ -8,117 +8,122 @@ datasource db {
 }
 
 model User {
-  id                String            @id @default(cuid())
-  name              String?
-  email             String?           @unique
-  emailVerified     DateTime?
-  image             String?
-  activeWorkspaceId String?
-  hasUsedTrial      Boolean           @default(false)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  Account           Account[]
-  Document          Document[]
-  NudgeDismiss      NudgeDismiss[]
-  Report            Report[]
-  createdWorkspaces Workspace[]       @relation("createdWorkspaces")
-  memberships       WorkspaceMember[]
+  id                                          String            @id @default(cuid())
+  name                                        String?
+  email                                       String?           @unique
+  emailVerified                               DateTime?
+  image                                       String?
+  activeWorkspaceId                           String?
+  hasUsedTrial                                Boolean           @default(false)
+  createdAt                                   DateTime          @default(now())
+  updatedAt                                   DateTime          @updatedAt
+  Account                                     Account[]
+  Document                                    Document[]
+  NudgeDismiss                                NudgeDismiss[]
+  Report                                      Report[]
+  Workspace_User_activeWorkspaceIdToWorkspace Workspace?        @relation("User_activeWorkspaceIdToWorkspace", fields: [activeWorkspaceId], references: [id])
+  createdWorkspaces                           Workspace[]       @relation("createdWorkspaces")
+  memberships                                 WorkspaceMember[]
 }
 
 model Workspace {
-  id               String             @id @default(cuid())
-  name             String
-  businessNumber   String
-  createdById      String?
-  creditBalance    Int                @default(0)
-  planCode         PlanCode           @default(FREE)
-  industryType     IndustryType?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  companyScale     CompanyScale?
-  AggregationSet   AggregationSet[]
-  AiUsageLog       AiUsageLog[]
-  creditLedgers    CreditLedger[]
-  documents        Document[]
-  DocumentItemLink DocumentItemLink[]
-  EsgE101          EsgE101?
-  EsgE11           EsgE11?
-  EsgE111          EsgE111?
-  EsgE12           EsgE12?
-  EsgE21           EsgE21?
-  EsgE22           EsgE22?
-  EsgE31           EsgE31?
-  EsgE32           EsgE32?
-  EsgE33           EsgE33?
-  EsgE41           EsgE41?
-  EsgE42           EsgE42?
-  EsgE43           EsgE43?
-  EsgE51           EsgE51?
-  EsgE52           EsgE52?
-  EsgE53           EsgE53?
-  EsgE54           EsgE54?
-  EsgE55           EsgE55?
-  EsgE61           EsgE61?
-  EsgE62           EsgE62?
-  EsgE71           EsgE71?
-  EsgE72           EsgE72?
-  EsgE81           EsgE81?
-  EsgE91           EsgE91?
-  EsgE92           EsgE92?
-  EsgE93           EsgE93?
-  EsgG11           EsgG11?
-  EsgG12           EsgG12?
-  EsgG13           EsgG13?
-  EsgG21           EsgG21?
-  EsgG22           EsgG22?
-  EsgG23           EsgG23?
-  EsgG31           EsgG31?
-  EsgG32           EsgG32?
-  EsgG33           EsgG33?
-  EsgG41           EsgG41?
-  EsgG42           EsgG42?
-  EsgG43           EsgG43?
-  EsgG51           EsgG51?
-  EsgG52           EsgG52?
-  EsgG53           EsgG53?
-  EsgG54           EsgG54?
-  EsgG61           EsgG61?
-  EsgP11           EsgP11?
-  EsgP12           EsgP12?
-  EsgP21           EsgP21?
-  EsgP22           EsgP22?
-  EsgP31           EsgP31?
-  EsgS11           EsgS11?
-  EsgS12           EsgS12?
-  EsgS13           EsgS13?
-  EsgS21           EsgS21?
-  EsgS22           EsgS22?
-  EsgS23           EsgS23?
-  EsgS31           EsgS31?
-  EsgS32           EsgS32?
-  EsgS33           EsgS33?
-  EsgS41           EsgS41?
-  EsgS42           EsgS42?
-  EsgS43           EsgS43?
-  EsgS51           EsgS51?
-  EsgS52           EsgS52?
-  EsgS53           EsgS53?
-  EsgS61           EsgS61?
-  EsgS62           EsgS62?
-  EsgS71           EsgS71?
-  EsgS72           EsgS72?
-  EsgS81           EsgS81?
-  EsgS82           EsgS82?
-  EsgS91           EsgS91?
-  esgSummaries     EsgSummary[]
-  Invitation       Invitation[]
-  NudgeDismiss     NudgeDismiss[]
-  Payment          Payment[]
-  PipelineSession  PipelineSession[]
-  Report           Report[]
-  subscription     Subscription?
-  createdBy        User?              @relation("createdWorkspaces", fields: [createdById], references: [id])
-  members          WorkspaceMember[]
+  id                                     String             @id @default(cuid())
+  name                                   String
+  businessNumber                         String
+  createdById                            String?
+  analysisUsed                           Int                @default(0)
+  reportUsed                             Int                @default(0)
+  bonusAnalysis                          Int                @default(0)
+  bonusReport                            Int                @default(0)
+  usagePeriodStart                       DateTime           @default(now())
+  planCode                               PlanCode           @default(FREE)
+  industryType                           IndustryType?
+  companyScale                           CompanyScale?
+  createdAt                              DateTime           @default(now())
+  updatedAt                              DateTime           @updatedAt
+  AggregationSet                         AggregationSet[]
+  AiUsageLog                             AiUsageLog[]
+  documents                              Document[]
+  DocumentItemLink                       DocumentItemLink[]
+  EsgE101                                EsgE101?
+  EsgE11                                 EsgE11?
+  EsgE111                                EsgE111?
+  EsgE12                                 EsgE12?
+  EsgE21                                 EsgE21?
+  EsgE22                                 EsgE22?
+  EsgE31                                 EsgE31?
+  EsgE32                                 EsgE32?
+  EsgE33                                 EsgE33?
+  EsgE41                                 EsgE41?
+  EsgE42                                 EsgE42?
+  EsgE43                                 EsgE43?
+  EsgE51                                 EsgE51?
+  EsgE52                                 EsgE52?
+  EsgE53                                 EsgE53?
+  EsgE54                                 EsgE54?
+  EsgE55                                 EsgE55?
+  EsgE61                                 EsgE61?
+  EsgE62                                 EsgE62?
+  EsgE71                                 EsgE71?
+  EsgE72                                 EsgE72?
+  EsgE81                                 EsgE81?
+  EsgE91                                 EsgE91?
+  EsgE92                                 EsgE92?
+  EsgE93                                 EsgE93?
+  EsgG11                                 EsgG11?
+  EsgG12                                 EsgG12?
+  EsgG13                                 EsgG13?
+  EsgG21                                 EsgG21?
+  EsgG22                                 EsgG22?
+  EsgG23                                 EsgG23?
+  EsgG31                                 EsgG31?
+  EsgG32                                 EsgG32?
+  EsgG33                                 EsgG33?
+  EsgG41                                 EsgG41?
+  EsgG42                                 EsgG42?
+  EsgG43                                 EsgG43?
+  EsgG51                                 EsgG51?
+  EsgG52                                 EsgG52?
+  EsgG53                                 EsgG53?
+  EsgG54                                 EsgG54?
+  EsgG61                                 EsgG61?
+  EsgP11                                 EsgP11?
+  EsgP12                                 EsgP12?
+  EsgP21                                 EsgP21?
+  EsgP22                                 EsgP22?
+  EsgP31                                 EsgP31?
+  EsgS11                                 EsgS11?
+  EsgS12                                 EsgS12?
+  EsgS13                                 EsgS13?
+  EsgS21                                 EsgS21?
+  EsgS22                                 EsgS22?
+  EsgS23                                 EsgS23?
+  EsgS31                                 EsgS31?
+  EsgS32                                 EsgS32?
+  EsgS33                                 EsgS33?
+  EsgS41                                 EsgS41?
+  EsgS42                                 EsgS42?
+  EsgS43                                 EsgS43?
+  EsgS51                                 EsgS51?
+  EsgS52                                 EsgS52?
+  EsgS53                                 EsgS53?
+  EsgS61                                 EsgS61?
+  EsgS62                                 EsgS62?
+  EsgS71                                 EsgS71?
+  EsgS72                                 EsgS72?
+  EsgS81                                 EsgS81?
+  EsgS82                                 EsgS82?
+  EsgS91                                 EsgS91?
+  esgSummaries                           EsgSummary[]
+  Invitation                             Invitation[]
+  NudgeDismiss                           NudgeDismiss[]
+  Payment                                Payment[]
+  PipelineSession                        PipelineSession[]
+  Report                                 Report[]
+  subscription                           Subscription?
+  User_User_activeWorkspaceIdToWorkspace User[]             @relation("User_activeWorkspaceIdToWorkspace")
+  createdBy                              User?              @relation("createdWorkspaces", fields: [createdById], references: [id])
+  members                                WorkspaceMember[]
 }
 
 model WorkspaceMember {
@@ -146,12 +151,15 @@ model Document {
   status                 DocumentStatus           @default(UPLOADED)
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime
+  pageCount              Int?
   AggregationSetDocument AggregationSetDocument[]
   User                   User                     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
   workspace              Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   DocumentItemLink       DocumentItemLink[]
   EsgSummary             EsgSummary[]
   PipelineSession        PipelineSession[]
+
+  @@index([workspaceId, createdAt])
 }
 
 model EsgSummary {
@@ -170,31 +178,18 @@ model EsgSummary {
   filledFields      Int             @default(0)
   totalFields       Int             @default(0)
   completionRate    Int             @default(0)
+  grade             String?
+  keyMetrics        Json?
+  evidenceDetails   Json?
   naReason          NaReasonType?
   naRecommendedByAi Boolean         @default(false)
   updatedAt         DateTime        @updatedAt
   createdAt         DateTime        @default(now())
-  evidenceDetails   Json?
-  grade             String?
-  keyMetrics        Json?
   Document          Document?       @relation(fields: [documentId], references: [id])
   workspace         Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, esgItemCode])
-}
-
-model CreditLedger {
-  id          String     @id @default(cuid())
-  workspaceId String
-  amount      Int
-  balance     Int
-  type        CreditType
-  reason      String
-  referenceId String?
-  createdAt   DateTime   @default(now())
-  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@index([workspaceId, createdAt])
+  @@index([workspaceId, status])
 }
 
 model Plan {
@@ -1447,11 +1442,13 @@ model PipelineSession {
   errorCount   Int           @default(0)
   lastError    String?
   durationMs   Int?
+  jobId        String?
   startedAt    DateTime      @default(now())
   completedAt  DateTime?
-  jobId        String?
   Document     Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
   Workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, documentId])
 }
 
 model Report {
@@ -1460,10 +1457,10 @@ model Report {
   title        String
   data         Json
   createdById  String
-  generatedAt  DateTime     @default(now())
-  errorMessage String?
-  jobId        String?
   status       ReportStatus @default(COMPLETED)
+  jobId        String?
+  errorMessage String?
+  generatedAt  DateTime     @default(now())
   User         User         @relation(fields: [createdById], references: [id])
   Workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
@@ -1482,6 +1479,7 @@ model mcp_oauth_clients {
   grantTypes              Json?
   responseTypes           Json?
   createdAt               DateTime           @default(now())
+  updatedAt               DateTime
   mcp_oauth_codes         mcp_oauth_codes[]
   mcp_oauth_tokens        mcp_oauth_tokens[]
 }
@@ -1575,21 +1573,13 @@ enum Role {
   VIEWER
 }
 
-enum CreditType {
-  INITIAL
-  MONTHLY
-  PURCHASE
-  CONSUME
-  REFUND
-  ADMIN
-}
-
 enum DocumentStatus {
   UPLOADED
   PREPROCESSED
   CLASSIFIED
   ANALYZING
   ANALYZED
+  FAILED
 }
 
 enum AggregationSetStatus {

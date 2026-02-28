@@ -18,7 +18,8 @@ export interface UserDetail {
     id: string;
     name: string;
     planCode: string;
-    creditBalance: number;
+    analysisUsed: number;
+    reportUsed: number;
     role: string;
     joinedAt: Date;
   }[];
@@ -43,7 +44,7 @@ export const getUserDetail = createAction(
         memberships: {
           include: {
             workspace: {
-              select: { id: true, name: true, planCode: true, creditBalance: true },
+              select: { id: true, name: true, planCode: true, analysisUsed: true, reportUsed: true },
             },
           },
           orderBy: { joinedAt: "asc" },
@@ -80,7 +81,8 @@ export const getUserDetail = createAction(
         id: m.workspace.id,
         name: m.workspace.name,
         planCode: m.workspace.planCode,
-        creditBalance: m.workspace.creditBalance,
+        analysisUsed: m.workspace.analysisUsed,
+        reportUsed: m.workspace.reportUsed,
         role: m.role,
         joinedAt: m.joinedAt,
       })),

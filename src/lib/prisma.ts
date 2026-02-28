@@ -1,8 +1,8 @@
-import { PrismaClient, PlanCode, CreditType, PaymentStatus, SubscriptionStatus, AiProvider } from "../../node_modules/.prisma/client-kr";
+import { PrismaClient, PlanCode, PaymentStatus, SubscriptionStatus, AiProvider } from "../../node_modules/.prisma/client-kr";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { getDatabaseUrl } from "@/lib/regions";
 
-export { PlanCode, CreditType, PaymentStatus, SubscriptionStatus, AiProvider };
+export { PlanCode, PaymentStatus, SubscriptionStatus, AiProvider };
 export type { PrismaClient };
 
 const clientCache = new Map<string, PrismaClient>();

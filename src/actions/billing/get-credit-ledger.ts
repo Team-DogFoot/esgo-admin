@@ -2,9 +2,7 @@
 
 import { z } from "zod";
 import { createAction } from "@/lib/action";
-import { getPrismaClient, CreditType } from "@/lib/prisma";
 import { getRegion } from "@/lib/regions";
-import { getDateRangeFilter } from "@/lib/date-range";
 import { ValidationError } from "@/lib/errors";
 
 const schema = z.object({
@@ -12,7 +10,7 @@ const schema = z.object({
   page: z.number().int().min(1).optional().default(1),
   perPage: z.number().int().min(1).max(100).optional().default(20),
   search: z.string().optional(),
-  typeFilter: z.nativeEnum(CreditType).optional(),
+  typeFilter: z.string().optional(),
   dateRange: z
     .enum(["this_month", "last_month", "3_months", "all"])
     .optional()
@@ -45,56 +43,18 @@ export const getCreditLedger = createAction(
     const parsed = schema.safeParse(input);
     if (!parsed.success) throw new ValidationError("잘못된 요청입니다.");
 
-    const { regionId, page, perPage, search, typeFilter, dateRange } =
-      parsed.data;
+    const { regionId, page, perPage } = parsed.data;
     const region = getRegion(regionId);
     if (!region) throw new ValidationError("유효하지 않은 리전입니다.");
 
-    const prisma = getPrismaClient(regionId);
-
-    const dateFilter = getDateRangeFilter(dateRange);
-
-    const where = {
-      ...(search && {
-        workspace: {
-          name: { contains: search, mode: "insensitive" as const },
-        },
-      }),
-      ...(typeFilter && { type: typeFilter }),
-      ...(dateFilter && { createdAt: dateFilter }),
-    };
-
-    const [total, ledgers] = await Promise.all([
-      prisma.creditLedger.count({ where }),
-      prisma.creditLedger.findMany({
-        where,
-        include: {
-          workspace: { select: { name: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * perPage,
-        take: perPage,
-      }),
-    ]);
-
-    const items: CreditLedgerItem[] = ledgers.map((l) => ({
-      id: l.id,
-      workspaceId: l.workspaceId,
-      workspaceName: l.workspace.name,
-      amount: l.amount,
-      balance: l.balance,
-      type: l.type,
-      reason: l.reason,
-      referenceId: l.referenceId,
-      createdAt: l.createdAt,
-    }));
-
+    // CreditLedger 모델이 제거되어 빈 데이터를 반환합니다.
+    // 건수 기반 시스템으로 마이그레이션되었습니다.
     return {
-      items,
-      total,
+      items: [],
+      total: 0,
       page,
       perPage,
-      totalPages: Math.ceil(total / perPage),
+      totalPages: 0,
     };
   },
 );

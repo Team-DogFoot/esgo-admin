@@ -116,7 +116,7 @@ export function UserDetailView({ user, regionId }: UserDetailViewProps) {
                     <TableHead>워크스페이스</TableHead>
                     <TableHead>역할</TableHead>
                     <TableHead>플랜</TableHead>
-                    <TableHead className="text-right">크레딧</TableHead>
+                    <TableHead className="text-right">분석/리포트</TableHead>
                     <TableHead>가입일</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -138,7 +138,7 @@ export function UserDetailView({ user, regionId }: UserDetailViewProps) {
                           {PLAN_LABEL[ws.planCode] ?? ws.planCode}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">{ws.creditBalance.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{ws.analysisUsed}/{ws.reportUsed}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(ws.joinedAt).toLocaleDateString("ko-KR")}
                       </TableCell>

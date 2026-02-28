@@ -34,13 +34,9 @@ export const getBillingStats = createAction(
 
     const prisma = getPrismaClient(regionId);
 
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
     const [
       activeSubscriptionsWithPlan,
       totalWorkspaces,
-      monthlyCreditsAgg,
       pendingOrFailedPayments,
       planGroups,
       recentPaymentsRaw,
@@ -50,13 +46,6 @@ export const getBillingStats = createAction(
         include: { plan: { select: { monthlyPrice: true } } },
       }),
       prisma.workspace.count(),
-      prisma.creditLedger.aggregate({
-        _sum: { amount: true },
-        where: {
-          type: "CONSUME",
-          createdAt: { gte: monthStart },
-        },
-      }),
       prisma.payment.count({
         where: { status: { in: ["PENDING", "FAILED"] } },
       }),
@@ -74,7 +63,7 @@ export const getBillingStats = createAction(
     ]);
 
     const mrr = activeSubscriptionsWithPlan.reduce(
-      (sum, sub) => sum + sub.plan.monthlyPrice,
+      (sum: number, sub: { plan: { monthlyPrice: number } }) => sum + sub.plan.monthlyPrice,
       0,
     );
     const activeSubscriptions = activeSubscriptionsWithPlan.length;
@@ -88,9 +77,10 @@ export const getBillingStats = createAction(
       activeSubscriptions,
       totalWorkspaces,
       conversionRate,
-      monthlyCreditsConsumed: Math.abs(monthlyCreditsAgg._sum.amount ?? 0),
+      // CreditLedger 모델이 제거되어 0을 반환합니다.
+      monthlyCreditsConsumed: 0,
       pendingOrFailedPayments,
-      planDistribution: planGroups.map((g) => ({
+      planDistribution: planGroups.map((g: { planCode: string; _count: { id: number } }) => ({
         planCode: g.planCode,
         count: g._count.id,
       })),

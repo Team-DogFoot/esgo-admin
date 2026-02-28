@@ -2,11 +2,10 @@
 
 import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Building2, Coins, ClipboardCheck } from "lucide-react";
+import { Building2, ClipboardCheck, BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditAdjustForm } from "@/components/workspace/credit-adjust-form";
 import { PlanChangeForm } from "@/components/workspace/plan-change-form";
 import { MemberList } from "@/components/workspace/member-list";
 import { WorkspaceDocumentsTab } from "@/components/workspace/workspace-documents-tab";
@@ -29,7 +28,7 @@ interface WorkspaceDetailProps {
   subscriptionData: WorkspaceSubscriptionData;
 }
 
-const TAB_VALUES = ["overview", "members", "credits", "documents", "esg", "pipelines", "subscription"] as const;
+const TAB_VALUES = ["overview", "members", "quota", "documents", "esg", "pipelines", "subscription"] as const;
 type TabValue = typeof TAB_VALUES[number];
 
 function isValidTab(value: string | null): value is TabValue {
@@ -78,10 +77,14 @@ export function WorkspaceDetail({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
             <div>
-              <p className="text-2xl font-bold">{workspace.creditBalance}</p>
-              <p className="text-xs text-muted-foreground">크레딧 잔액</p>
+              <p className="text-2xl font-bold">{workspace.analysisUsed}</p>
+              <p className="text-xs text-muted-foreground">분석 사용</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{workspace.reportUsed}</p>
+              <p className="text-xs text-muted-foreground">리포트 사용</p>
             </div>
             <div>
               <p className="text-2xl font-bold">{workspace.members.length}</p>
@@ -100,7 +103,7 @@ export function WorkspaceDetail({
         <TabsList className="w-full justify-start">
           <TabsTrigger value="overview">개요</TabsTrigger>
           <TabsTrigger value="members">멤버</TabsTrigger>
-          <TabsTrigger value="credits">크레딧</TabsTrigger>
+          <TabsTrigger value="quota">사용량</TabsTrigger>
           <TabsTrigger value="documents">문서</TabsTrigger>
           <TabsTrigger value="esg">ESG</TabsTrigger>
           <TabsTrigger value="pipelines">파이프라인</TabsTrigger>
@@ -113,12 +116,29 @@ export function WorkspaceDetail({
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Coins className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-base">크레딧 조정</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-base">사용량 현황</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CreditAdjustForm regionId={regionId} workspaceId={workspace.id} currentBalance={workspace.creditBalance} />
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">분석 사용</p>
+                    <p className="text-lg font-semibold">{workspace.analysisUsed}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">리포트 사용</p>
+                    <p className="text-lg font-semibold">{workspace.reportUsed}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">보너스 분석</p>
+                    <p className="text-lg font-semibold">{workspace.bonusAnalysis}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">보너스 리포트</p>
+                    <p className="text-lg font-semibold">{workspace.bonusReport}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -144,34 +164,32 @@ export function WorkspaceDetail({
           </Card>
         </TabsContent>
 
-        {/* Credits Tab */}
-        <TabsContent value="credits">
+        {/* Quota Tab */}
+        <TabsContent value="quota">
           <Card>
-            <CardHeader><CardTitle className="text-base">최근 크레딧 이력</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">사용량 상세</CardTitle></CardHeader>
             <CardContent>
-              {workspace.recentCredits.length === 0 ? (
-                <p className="text-sm text-muted-foreground">크레딧 이력이 없습니다.</p>
-              ) : (
-                <div className="space-y-2">
-                  {workspace.recentCredits.map((cl) => (
-                    <div key={cl.id} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">{cl.type}</Badge>
-                        <span className="text-muted-foreground">{cl.reason ?? "-"}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={cl.amount >= 0 ? "text-green-600" : "text-red-600"}>
-                          {cl.amount >= 0 ? "+" : ""}{cl.amount}
-                        </span>
-                        <span className="text-muted-foreground">잔액 {cl.balance}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(cl.createdAt).toLocaleDateString("ko-KR")}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">분석 사용</p>
+                  <p className="text-2xl font-bold">{workspace.analysisUsed}</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-sm text-muted-foreground">리포트 사용</p>
+                  <p className="text-2xl font-bold">{workspace.reportUsed}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">보너스 분석</p>
+                  <p className="text-2xl font-bold">{workspace.bonusAnalysis}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">보너스 리포트</p>
+                  <p className="text-2xl font-bold">{workspace.bonusReport}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                크레딧 시스템이 건수 기반 시스템으로 마이그레이션되었습니다.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
