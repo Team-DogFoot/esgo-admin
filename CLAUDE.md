@@ -169,3 +169,12 @@ K-ESG 리전 DB 직접 접근. 스키마: `prisma/{regionId}/schema.prisma`. 핵
 ## 문서 수정 원칙
 
 README.md, CLAUDE.md 등 프로젝트 문서를 수정할 때는 변경 이력이나 흔적을 남기지 않는다. 항상 처음부터 이 내용이었던 것처럼 최종본 형태로 작성한다.
+
+## 문서 이전 버전 복구
+
+이 문서는 간결함을 위해 압축되었다 (커밋 `cb97af7`). 이전 상세 버전이 필요하면:
+
+```bash
+git revert cb97af7                        # 전체 되돌리기
+git checkout cb97af7~1 -- CLAUDE.md       # 이 파일만 복구
+```
