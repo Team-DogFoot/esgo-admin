@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useTransition } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,21 +19,17 @@ interface PlanChangeFormProps {
 
 export function PlanChangeForm({ regionId, workspaceId, currentPlanCode }: PlanChangeFormProps) {
   const [planCode, setPlanCode] = useState(currentPlanCode);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      setError(null);
-      setSuccess(null);
-      if (planCode === currentPlanCode) { setError("현재 플랜과 동일합니다."); return; }
+      if (planCode === currentPlanCode) { toast.error("현재 플랜과 동일합니다."); return; }
 
       startTransition(async () => {
         const result = await changePlan({ regionId, workspaceId, planCode });
-        if (!result.success) { setError(result.error); return; }
-        setSuccess(`플랜이 ${result.data.planCode}로 변경되었습니다.`);
+        if (!result.success) { toast.error(result.error); return; }
+        toast.success(`플랜이 ${result.data.planCode}로 변경되었습니다.`);
       });
     },
     [regionId, workspaceId, planCode, currentPlanCode],
@@ -40,12 +37,6 @@ export function PlanChangeForm({ regionId, workspaceId, currentPlanCode }: PlanC
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
-      )}
-      {success && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{success}</div>
-      )}
       <div className="space-y-2">
         <Label>플랜</Label>
         <Select value={planCode} onValueChange={setPlanCode}>

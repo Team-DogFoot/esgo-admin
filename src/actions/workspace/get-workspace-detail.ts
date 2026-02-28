@@ -23,14 +23,6 @@ export interface WorkspaceDetail {
     role: string;
     joinedAt: Date;
   }[];
-  recentCredits: {
-    id: string;
-    amount: number;
-    balance: number;
-    type: string;
-    reason: string | null;
-    createdAt: Date;
-  }[];
   esgProgress: {
     total: number;
     completed: number;
@@ -83,8 +75,6 @@ export const getWorkspaceDetail = createAction(
         role: m.role,
         joinedAt: m.joinedAt,
       })),
-      // CreditLedger 모델이 제거되어 빈 배열을 반환합니다.
-      recentCredits: [],
       esgProgress: { total: esgTotal, completed: esgCompleted, inProgress: esgInProgress },
     };
   },

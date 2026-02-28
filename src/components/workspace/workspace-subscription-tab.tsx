@@ -84,6 +84,18 @@ export function WorkspaceSubscriptionTab({ data }: WorkspaceSubscriptionTabProps
                   <p className="text-muted-foreground">최대 문서</p>
                   <p className="font-medium">{data.subscription.plan.maxDocuments ?? "무제한"}</p>
                 </div>
+                <div>
+                  <p className="text-muted-foreground">트라이얼</p>
+                  <div className="mt-1">
+                    {data.subscription.trialEndedAt ? (
+                      <Badge variant="destructive">만료</Badge>
+                    ) : data.subscription.trialEndsAt && new Date(data.subscription.trialEndsAt) > new Date() ? (
+                      <Badge className="bg-green-100 text-green-700">활성</Badge>
+                    ) : (
+                      <Badge variant="secondary">없음</Badge>
+                    )}
+                  </div>
+                </div>
               </div>
               {data.subscription.canceledAt && (
                 <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">

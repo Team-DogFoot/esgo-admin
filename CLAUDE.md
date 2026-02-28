@@ -4,7 +4,7 @@
 
 ## 프로젝트 요약
 
-K-ESG 멀티 리전 통합 관리 플랫폼. 리전별 워크스페이스·사용자·크레딧·구독을 모니터링하고 관리한다.
+K-ESG 멀티 리전 통합 관리 플랫폼. 리전별 워크스페이스·사용자·건수·구독·트라이얼을 모니터링하고 관리한다.
 
 - **스택**: Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui, Prisma 7, NextAuth v5, Pino, Zod 4
 - **언어**: TypeScript strict, 한국어 UI
@@ -31,7 +31,7 @@ src/proxy.ts              인증 미들웨어 (NextAuth, ADMIN_EMAILS 체크)
 src/actions/              Server Actions (도메인별 폴더, 함수당 1파일)
   dashboard/              리전별 대시보드 통계
   user/                   사용자 조회 (목록, 상세)
-  workspace/              워크스페이스 관리 (목록, 상세, 크레딧 조정, 플랜 변경)
+  workspace/              워크스페이스 관리 (목록, 상세, 건수 조정, 플랜 변경, 트라이얼 관리)
   billing/                빌링 (구독, 결제, 크레딧)
   ai-monitor/             AI 모니터링 (파이프라인, 크레딧 분석, 사용량)
   content/                콘텐츠 (문서, ESG, 보고서)
@@ -142,9 +142,9 @@ export function MyComponent({ regionId }: Props) {
 
 ## DB 모델
 
-K-ESG 리전 DB 직접 접근. 스키마: `prisma/{regionId}/schema.prisma`. 핵심: `User ──< WorkspaceMember >── Workspace ──< Document/EsgSummary/CreditLedger/PipelineSession/Subscription/Payment/AiUsageLog`.
+K-ESG 리전 DB 직접 접근. 스키마: `prisma/{regionId}/schema.prisma`. 핵심: `User ──< WorkspaceMember >── Workspace ──< Document/EsgSummary/PipelineSession/Subscription/Payment/AiUsageLog`.
 
-주요 enum (re-export from `src/lib/prisma.ts`): `PlanCode`, `CreditType`, `PaymentStatus`, `SubscriptionStatus`. Server Action에서 `z.nativeEnum(PlanCode)` 런타임 검증.
+주요 enum (re-export from `src/lib/prisma.ts`): `PlanCode`, `PaymentStatus`, `SubscriptionStatus`. Server Action에서 `z.nativeEnum(PlanCode)` 런타임 검증.
 
 ## Platform과의 차이점
 

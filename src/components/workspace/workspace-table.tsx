@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { BatchCreditDialog } from "@/components/workspace/batch-credit-dialog";
+import { BatchQuotaDialog } from "@/components/workspace/batch-quota-dialog";
 import { PLAN_BADGE, PLAN_LABEL } from "@/lib/constants";
 import type { WorkspaceListItem } from "@/actions/workspace/get-workspaces";
 
@@ -57,7 +57,7 @@ export function WorkspaceTable({ workspaces, regionId }: WorkspaceTableProps) {
     <div className="space-y-4">
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3">
-          <BatchCreditDialog
+          <BatchQuotaDialog
             regionId={regionId}
             workspaceIds={Array.from(selectedIds)}
             onComplete={handleBatchComplete}

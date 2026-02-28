@@ -11,6 +11,8 @@ export interface SubscriptionInfo {
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
   canceledAt: Date | null;
+  trialEndsAt: Date | null;
+  trialEndedAt: Date | null;
   plan: {
     code: string;
     name: string;
@@ -71,6 +73,8 @@ export const getWorkspaceSubscription = createAction(
           currentPeriodStart: subscription.currentPeriodStart,
           currentPeriodEnd: subscription.currentPeriodEnd,
           canceledAt: subscription.canceledAt,
+          trialEndsAt: subscription.trialEndsAt,
+          trialEndedAt: subscription.trialEndedAt,
           plan: {
             code: subscription.plan.code,
             name: subscription.plan.name,

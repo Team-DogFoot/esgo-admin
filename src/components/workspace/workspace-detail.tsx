@@ -2,16 +2,18 @@
 
 import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Building2, ClipboardCheck, BarChart3 } from "lucide-react";
+import { Building2, ClipboardCheck, BarChart3, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlanChangeForm } from "@/components/workspace/plan-change-form";
+import { QuotaAdjustForm } from "@/components/workspace/quota-adjust-form";
 import { MemberList } from "@/components/workspace/member-list";
 import { WorkspaceDocumentsTab } from "@/components/workspace/workspace-documents-tab";
 import { WorkspaceEsgTab } from "@/components/workspace/workspace-esg-tab";
 import { WorkspacePipelinesTab } from "@/components/workspace/workspace-pipelines-tab";
 import { WorkspaceSubscriptionTab } from "@/components/workspace/workspace-subscription-tab";
+import { TrialManageForm } from "@/components/workspace/trial-manage-form";
 import { PLAN_BADGE, PLAN_LABEL } from "@/lib/constants";
 import type { WorkspaceDetail as WorkspaceDetailType } from "@/actions/workspace/get-workspace-detail";
 import type { WorkspaceDocumentItem } from "@/actions/workspace/get-workspace-documents";
@@ -61,6 +63,13 @@ export function WorkspaceDetail({
     },
     [router, searchParams],
   );
+
+  const quotaCurrent = {
+    analysisUsed: workspace.analysisUsed,
+    reportUsed: workspace.reportUsed,
+    bonusAnalysis: workspace.bonusAnalysis,
+    bonusReport: workspace.bonusReport,
+  };
 
   return (
     <div className="space-y-6">
@@ -154,6 +163,18 @@ export function WorkspaceDetail({
               </CardContent>
             </Card>
           </div>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-base">건수 조정</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <QuotaAdjustForm regionId={regionId} workspaceId={workspace.id} current={quotaCurrent} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Members Tab */}
@@ -187,9 +208,13 @@ export function WorkspaceDetail({
                   <p className="text-2xl font-bold">{workspace.bonusReport}</p>
                 </div>
               </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                크레딧 시스템이 건수 기반 시스템으로 마이그레이션되었습니다.
-              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader><CardTitle className="text-base">건수 조정</CardTitle></CardHeader>
+            <CardContent>
+              <QuotaAdjustForm regionId={regionId} workspaceId={workspace.id} current={quotaCurrent} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -211,7 +236,10 @@ export function WorkspaceDetail({
 
         {/* Subscription Tab */}
         <TabsContent value="subscription">
-          <WorkspaceSubscriptionTab data={subscriptionData} />
+          <div className="space-y-6">
+            <WorkspaceSubscriptionTab data={subscriptionData} />
+            <TrialManageForm regionId={regionId} workspaceId={workspace.id} subscription={subscriptionData.subscription} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
