@@ -62,7 +62,9 @@ prisma/{regionId}/        리전별 Prisma 스키마 + config
 5. Admin 커밋/push       →  변경된 prisma/kr/schema.prisma 반드시 커밋
 ```
 
-**절대 금지**: Admin에서 `prisma db push` 실행, `schema.prisma` 수동 편집, Platform 변경 후 `db pull` + 커밋 누락 (CI/CD 깨짐)
+**절대 금지**: Admin에서 `prisma db push` 실행, `schema.prisma` 수동 편집, Platform 변경 후 `db pull` + 커밋 누락
+
+**배포 시 주의**: Docker dev 환경에서는 Admin 컨테이너 시작 시 `db pull`이 자동 실행된다. 하지만 프로덕션 CI/CD는 레포에 커밋된 `schema.prisma`로 `prisma generate`만 실행하므로, 반드시 `db pull` 결과를 커밋해야 한다. 커밋 누락 시 CI/CD 빌드 실패.
 
 ## Server Action 템플릿
 
@@ -153,6 +155,10 @@ K-ESG 리전 DB 직접 접근. 스키마: `prisma/{regionId}/schema.prisma`. 핵
 | 접근 제어 | 워크스페이스 멤버십 | ADMIN_EMAILS 화이트리스트 |
 | Prisma | 단일 클라이언트, `db push` | 리전별 팩토리, `db pull` |
 | 라우팅 | `/dashboard/*` | `/[region]/*` |
+
+## 배포 환경
+
+프로덕션: https://admin.esgohq.com. `ghcr.io/team-dogfoot/esgo-admin`. GitHub Actions → lint/tsc → Docker → GHCR → K8s 매니페스트 갱신 → ArgoCD. CI/CD에서 DB 접근 없음 — 커밋된 `prisma/kr/schema.prisma`로 `prisma generate`만 실행.
 
 ## 절대 하지 말 것
 
