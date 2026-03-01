@@ -96,6 +96,12 @@ prisma/
   kr/                           # 한국 리전
     schema.prisma               #   K-ESG DB 스키마 (db pull로 동기화)
     prisma.config.ts            #   Prisma 설정 (DATABASE_URL_KR)
+  vn/                           # 베트남 리전
+    schema.prisma               #   VN DB 스키마 (db pull로 동기화)
+    prisma.config.ts            #   Prisma 설정 (DATABASE_URL_VN)
+  mx/                           # 멕시코 리전
+    schema.prisma               #   MX DB 스키마 (db pull로 동기화)
+    prisma.config.ts            #   Prisma 설정 (DATABASE_URL_MX)
 ```
 
 ---
@@ -143,7 +149,7 @@ ESGo 프로젝트는 `esgo/` 상위 폴더에서 Docker Compose로 PostgreSQL + 
 
 ```bash
 # esgo/ 상위 폴더에서
-docker compose up -d postgres          # PostgreSQL만 기동 (포트 5433)
+docker compose up -d postgres postgres-vn postgres-mx   # 리전별 PostgreSQL 기동 (KR:5433, VN:5434, MX:5435)
 
 # 또는 전체 dev 환경 (Docker 내부에서 실행)
 docker compose -f docker-compose.dev.yml up -d --build
@@ -176,15 +182,17 @@ cp .env.example .env
 | `AUTH_GOOGLE_ID` | Google OAuth Client ID | |
 | `AUTH_GOOGLE_SECRET` | Google OAuth Client Secret | |
 | `ADMIN_EMAILS` | 허용 관리자 이메일 (콤마 구분) | `admin@example.com` |
-| `REGIONS` | 리전 설정 JSON 배열 | `[{"id":"kr","name":"한국","domain":"k-esg.esgohq.com","flag":"🇰🇷"}]` |
-| `DATABASE_URL_KR` | 한국 리전 DB URL | `postgresql://user:pass@host:5432/db` |
+| `REGIONS` | 리전 설정 JSON 배열 | `[{"id":"kr",...},{"id":"vn",...},{"id":"mx",...}]` |
+| `DATABASE_URL_KR` | 한국 리전 DB URL | `postgresql://esgo:esgo_local@localhost:5433/esgo` |
+| `DATABASE_URL_VN` | 베트남 리전 DB URL | `postgresql://esgo:esgo_local@localhost:5434/esgo_vn` |
+| `DATABASE_URL_MX` | 멕시코 리전 DB URL | `postgresql://esgo:esgo_local@localhost:5435/esgo_mx` |
 | `LOG_LEVEL` | 로그 레벨 | `info` |
 
 #### Prisma 클라이언트 생성
 
 ```bash
-npm run db:pull:kr        # K-ESG DB에서 스키마 동기화
-npm run db:generate:kr    # Prisma Client 생성
+npm run db:pull:all       # 모든 리전 DB에서 스키마 동기화
+npm run db:generate:all   # 모든 리전 Prisma Client 생성
 ```
 
 #### 개발 서버
@@ -203,7 +211,13 @@ npm run build            # 프로덕션 빌드
 npm run start            # 프로덕션 서버
 npm run lint             # ESLint
 npm run db:pull:kr       # 한국 리전 DB에서 Prisma 스키마 동기화
+npm run db:pull:vn       # 베트남 리전 DB에서 Prisma 스키마 동기화
+npm run db:pull:mx       # 멕시코 리전 DB에서 Prisma 스키마 동기화
+npm run db:pull:all      # 모든 리전 스키마 동기화
 npm run db:generate:kr   # 한국 리전 Prisma 클라이언트 생성
+npm run db:generate:vn   # 베트남 리전 Prisma 클라이언트 생성
+npm run db:generate:mx   # 멕시코 리전 Prisma 클라이언트 생성
+npm run db:generate:all  # 모든 리전 Prisma 클라이언트 생성
 ```
 
 ---
@@ -244,6 +258,10 @@ npm run db:pull:jp
 npm run db:generate:jp
 ```
 
+5. **prisma.ts ClientMap에 리전 추가**
+
+`src/lib/prisma.ts`에서 새 리전 PrismaClient import 및 `ClientMap`에 엔트리 추가.
+
 ---
 
 ## 배포
@@ -267,7 +285,7 @@ docker run -p 3000:3000 --env-file .env esgo-admin
 
 - **자체 DB 없음**: K-ESG 리전 DB에 읽기/쓰기 직접 접근. 어드민 전용 테이블 없음
 - **JWT 전용 인증**: DB adapter 미사용. Google OAuth + `ADMIN_EMAILS` 화이트리스트
-- **멀티 리전 Prisma**: 리전 ID로 PrismaClient를 캐시에서 조회. 리전별 독립 DB 연결
+- **멀티 리전 Prisma**: ClientMap 패턴으로 KR/VN/MX 리전별 PrismaClient를 캐시에서 조회. 리전별 독립 DB 연결
 - **Prisma enum re-export**: `PlanCode`, `PaymentStatus`, `SubscriptionStatus`를 `src/lib/prisma.ts`에서 re-export. Zod `nativeEnum`으로 런타임 검증
 - **스키마 동기화**: Platform이 `prisma db push`로 스키마 관리, Admin은 `prisma db pull`로 읽기 전용 동기화
 - **Server-First**: 페이지는 Server Component, 인터랙션은 Client Component에 격리
