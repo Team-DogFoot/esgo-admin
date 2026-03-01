@@ -16,6 +16,7 @@ import {
   ListChecks,
   PieChart,
   FileText,
+  FileDown,
   Database,
   FileBarChart,
 } from "lucide-react";
@@ -74,6 +75,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: "문서", href: "/content/documents", icon: FileText },
       { label: "ESG 데이터", href: "/content/esg-data", icon: Database },
       { label: "리포트", href: "/content/reports", icon: FileBarChart },
+      { label: "샘플 PDF", href: "/content/sample-pdf", icon: FileDown },
     ],
   },
 ];
