@@ -32,6 +32,11 @@ const OPERATION_LABELS: Record<string, string> = {
   report_narrative_E: "보고서 (E)",
   report_narrative_S: "보고서 (S)",
   report_narrative_G: "보고서 (G)",
+  "report-narrator": "보고서 서술",
+  "executive-summary": "경영진 요약",
+  "priority-matrix": "우선순위 매트릭스",
+  materiality: "중대성 평가",
+  "supply-chain-agents": "공급망 분석",
 };
 
 function getOperationLabel(operation: string): string {
