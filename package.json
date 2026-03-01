@@ -8,7 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "db:pull:kr": "prisma db pull --config=prisma/kr/prisma.config.ts",
-    "db:generate:kr": "prisma generate --config=prisma/kr/prisma.config.ts"
+    "db:pull:vn": "prisma db pull --config=prisma/vn/prisma.config.ts",
+    "db:pull:mx": "prisma db pull --config=prisma/mx/prisma.config.ts",
+    "db:pull:all": "npm run db:pull:kr && npm run db:pull:vn && npm run db:pull:mx",
+    "db:generate:kr": "prisma generate --config=prisma/kr/prisma.config.ts",
+    "db:generate:vn": "prisma generate --config=prisma/vn/prisma.config.ts",
+    "db:generate:mx": "prisma generate --config=prisma/mx/prisma.config.ts",
+    "db:generate:all": "npm run db:generate:kr && npm run db:generate:vn && npm run db:generate:mx"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
