@@ -1,0 +1,1711 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client-vn"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model AggregationSet {
+  id                     String                   @id
+  workspaceId            String
+  esgItemCode            String
+  name                   String
+  period                 String
+  status                 AggregationSetStatus     @default(DRAFT)
+  result                 Json?
+  errorMessage           String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  Workspace              Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  AggregationSetDocument AggregationSetDocument[]
+
+  @@unique([workspaceId, esgItemCode, period])
+  @@index([workspaceId])
+}
+
+model AggregationSetDocument {
+  id               String         @id
+  aggregationSetId String
+  documentId       String
+  documentType     String
+  label            String?
+  included         Boolean        @default(true)
+  extractedValue   Json?
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+  AggregationSet   AggregationSet @relation(fields: [aggregationSetId], references: [id], onDelete: Cascade)
+  Document         Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([aggregationSetId, documentId])
+  @@index([aggregationSetId])
+}
+
+model AiUsageLog {
+  id                String     @id
+  workspaceId       String
+  provider          AiProvider
+  model             String?
+  operation         String
+  promptTokens      Int?
+  candidateTokens   Int?
+  totalTokens       Int?
+  cachedTokens      Int?
+  cacheTokenCount   Int?
+  cacheTtlSeconds   Int?
+  pageCount         Int?
+  imageCount        Int?
+  estimatedCostUsd  Float?
+  documentId        String?
+  pipelineSessionId String?
+  durationMs        Int?
+  success           Boolean    @default(true)
+  errorMessage      String?
+  createdAt         DateTime   @default(now())
+  Workspace         Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([provider, createdAt])
+  @@index([workspaceId, createdAt])
+}
+
+model Document {
+  id                     String                   @id
+  workspaceId            String
+  uploaderId             String
+  fileName               String
+  displayName            String?
+  s3Key                  String
+  s3Url                  String
+  size                   BigInt
+  contentType            String?
+  status                 DocumentStatus           @default(UPLOADED)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  AggregationSetDocument AggregationSetDocument[]
+  User                   User                     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  Workspace              Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  DocumentItemLink       DocumentItemLink[]
+  EsgSummary             EsgSummary[]
+  PipelineSession        PipelineSession[]
+
+  @@index([workspaceId, createdAt])
+}
+
+model DocumentItemLink {
+  id          String         @id
+  workspaceId String
+  documentId  String
+  esgItemCode String
+  source      DataSource
+  summary     String?
+  data        Json?
+  phase       PipelinePhase?
+  createdAt   DateTime       @default(now())
+  Document    Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  Workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, documentId, esgItemCode])
+  @@index([workspaceId, esgItemCode])
+}
+
+model EsgSummary {
+  id                String          @id
+  workspaceId       String
+  esgItemCode       String
+  status            EsgAnswerStatus @default(NOT_STARTED)
+  locked            Boolean         @default(false)
+  summary           String?
+  source            DataSource?
+  documentId        String?
+  pipelinePhase     PipelinePhase?
+  sourceDocumentIds Json?
+  mergeStrategy     String?
+  fieldSources      Json?
+  filledFields      Int             @default(0)
+  totalFields       Int             @default(0)
+  completionRate    Int             @default(0)
+  grade             String?
+  keyMetrics        Json?
+  evidenceDetails   Json?
+  naReason          NaReasonType?
+  naRecommendedByAi Boolean         @default(false)
+  updatedAt         DateTime
+  createdAt         DateTime        @default(now())
+  Document          Document?       @relation(fields: [documentId], references: [id])
+  Workspace         Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, esgItemCode])
+  @@index([workspaceId, status])
+}
+
+model HiggAir11 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggAir12 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggAir21 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggAir22 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggAir31 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggChm11 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggChm12 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggChm13 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggChm21 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggChm22 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggChm31 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEms11 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEms12 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEms13 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEms14 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEms15 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEms21 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEms22 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEms31 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEne11 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEne12 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEne13 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEne21 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEne22 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEne23 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggEne31 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWat11 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWat12 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWat21 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWat22 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWat31 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWst11 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWst12 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWst13 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWst14 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWst21 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWst22 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWst31 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWwt11 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWwt12 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWwt13 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWwt21 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWwt22 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model HiggWwt31 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Invitation {
+  id          String    @id
+  email       String
+  workspaceId String
+  role        Role      @default(VIEWER)
+  token       String    @unique
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([email, workspaceId])
+}
+
+model NudgeDismiss {
+  id          String    @id
+  userId      String
+  workspaceId String
+  nudgeKey    String
+  createdAt   DateTime  @default(now())
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId, nudgeKey])
+  @@index([userId, workspaceId])
+}
+
+model Payment {
+  id                  String        @id
+  workspaceId         String
+  amount              Int
+  status              PaymentStatus @default(PENDING)
+  lemonSqueezyOrderId String?       @unique
+  receiptUrl          String?
+  failReason          String?
+  paidAt              DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime
+  Workspace           Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+model PipelineSession {
+  id           String        @id
+  workspaceId  String
+  documentId   String
+  sessionId    String        @unique
+  currentPhase PipelinePhase
+  autoMode     Boolean       @default(false)
+  state        Json?
+  errorCount   Int           @default(0)
+  lastError    String?
+  durationMs   Int?
+  jobId        String?
+  startedAt    DateTime      @default(now())
+  completedAt  DateTime?
+  Document     Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  Workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, documentId])
+}
+
+model Plan {
+  id           String         @id
+  code         PlanCode       @unique
+  name         String
+  monthlyPrice Int
+  features     Json           @default("[]")
+  maxMembers   Int            @default(0)
+  maxDocuments Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  Subscription Subscription[]
+}
+
+model RbaA1 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaA2 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaA3 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaA4 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaA5 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaA6 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaA7 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaB1 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaB2 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaB3 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaB4 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaB5 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaB6 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaB7 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaB8 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaC1 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaC2 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaC3 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaC4 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaC5 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaC6 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaC7 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaC8 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaD1 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaD2 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaD3 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaD4 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaD5 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaD6 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaD7 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaD8 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE1 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE10 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE11 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE12 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE2 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE3 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE4 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE5 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE6 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE7 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE8 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model RbaE9 {
+  id               String    @id
+  workspaceId      String    @unique
+  data             Json?
+  summary          String?
+  evidence         Json?
+  validationErrors Json?
+  documentId       String?
+  extractedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                         String             @id
+  workspaceId                String             @unique
+  planId                     String
+  status                     SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart         DateTime
+  currentPeriodEnd           DateTime
+  canceledAt                 DateTime?
+  monthlyAnalysisLimit       Int                @default(3)
+  monthlyReportLimit         Int                @default(1)
+  currentMonthUsage          Int                @default(0)
+  currentMonthReportUsage    Int                @default(0)
+  bonusAnalysis              Int                @default(0)
+  bonusReport                Int                @default(0)
+  usageResetAt               DateTime           @default(now())
+  trialEndsAt                DateTime?
+  lemonSqueezyCustomerId     String?
+  lemonSqueezySubscriptionId String?
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime
+  Plan                       Plan               @relation(fields: [planId], references: [id])
+  Workspace                  Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                                          String            @id
+  name                                        String?
+  email                                       String?           @unique
+  emailVerified                               DateTime?
+  image                                       String?
+  activeWorkspaceId                           String?
+  createdAt                                   DateTime          @default(now())
+  updatedAt                                   DateTime
+  Account                                     Account[]
+  Document                                    Document[]
+  NudgeDismiss                                NudgeDismiss[]
+  Workspace_User_activeWorkspaceIdToWorkspace Workspace?        @relation("User_activeWorkspaceIdToWorkspace", fields: [activeWorkspaceId], references: [id])
+  Workspace_Workspace_createdByIdToUser       Workspace[]       @relation("Workspace_createdByIdToUser")
+  WorkspaceMember                             WorkspaceMember[]
+}
+
+model Workspace {
+  id                                     String             @id
+  name                                   String
+  businessNumber                         String
+  createdById                            String?
+  planCode                               PlanCode           @default(FREE)
+  industryType                           IndustryType?
+  companyScale                           CompanyScale?
+  createdAt                              DateTime           @default(now())
+  updatedAt                              DateTime
+  AggregationSet                         AggregationSet[]
+  AiUsageLog                             AiUsageLog[]
+  Document                               Document[]
+  DocumentItemLink                       DocumentItemLink[]
+  EsgSummary                             EsgSummary[]
+  HiggAir11                              HiggAir11?
+  HiggAir12                              HiggAir12?
+  HiggAir21                              HiggAir21?
+  HiggAir22                              HiggAir22?
+  HiggAir31                              HiggAir31?
+  HiggChm11                              HiggChm11?
+  HiggChm12                              HiggChm12?
+  HiggChm13                              HiggChm13?
+  HiggChm21                              HiggChm21?
+  HiggChm22                              HiggChm22?
+  HiggChm31                              HiggChm31?
+  HiggEms11                              HiggEms11?
+  HiggEms12                              HiggEms12?
+  HiggEms13                              HiggEms13?
+  HiggEms14                              HiggEms14?
+  HiggEms15                              HiggEms15?
+  HiggEms21                              HiggEms21?
+  HiggEms22                              HiggEms22?
+  HiggEms31                              HiggEms31?
+  HiggEne11                              HiggEne11?
+  HiggEne12                              HiggEne12?
+  HiggEne13                              HiggEne13?
+  HiggEne21                              HiggEne21?
+  HiggEne22                              HiggEne22?
+  HiggEne23                              HiggEne23?
+  HiggEne31                              HiggEne31?
+  HiggWat11                              HiggWat11?
+  HiggWat12                              HiggWat12?
+  HiggWat21                              HiggWat21?
+  HiggWat22                              HiggWat22?
+  HiggWat31                              HiggWat31?
+  HiggWst11                              HiggWst11?
+  HiggWst12                              HiggWst12?
+  HiggWst13                              HiggWst13?
+  HiggWst14                              HiggWst14?
+  HiggWst21                              HiggWst21?
+  HiggWst22                              HiggWst22?
+  HiggWst31                              HiggWst31?
+  HiggWwt11                              HiggWwt11?
+  HiggWwt12                              HiggWwt12?
+  HiggWwt13                              HiggWwt13?
+  HiggWwt21                              HiggWwt21?
+  HiggWwt22                              HiggWwt22?
+  HiggWwt31                              HiggWwt31?
+  Invitation                             Invitation[]
+  NudgeDismiss                           NudgeDismiss[]
+  Payment                                Payment[]
+  PipelineSession                        PipelineSession[]
+  RbaA1                                  RbaA1?
+  RbaA2                                  RbaA2?
+  RbaA3                                  RbaA3?
+  RbaA4                                  RbaA4?
+  RbaA5                                  RbaA5?
+  RbaA6                                  RbaA6?
+  RbaA7                                  RbaA7?
+  RbaB1                                  RbaB1?
+  RbaB2                                  RbaB2?
+  RbaB3                                  RbaB3?
+  RbaB4                                  RbaB4?
+  RbaB5                                  RbaB5?
+  RbaB6                                  RbaB6?
+  RbaB7                                  RbaB7?
+  RbaB8                                  RbaB8?
+  RbaC1                                  RbaC1?
+  RbaC2                                  RbaC2?
+  RbaC3                                  RbaC3?
+  RbaC4                                  RbaC4?
+  RbaC5                                  RbaC5?
+  RbaC6                                  RbaC6?
+  RbaC7                                  RbaC7?
+  RbaC8                                  RbaC8?
+  RbaD1                                  RbaD1?
+  RbaD2                                  RbaD2?
+  RbaD3                                  RbaD3?
+  RbaD4                                  RbaD4?
+  RbaD5                                  RbaD5?
+  RbaD6                                  RbaD6?
+  RbaD7                                  RbaD7?
+  RbaD8                                  RbaD8?
+  RbaE1                                  RbaE1?
+  RbaE10                                 RbaE10?
+  RbaE11                                 RbaE11?
+  RbaE12                                 RbaE12?
+  RbaE2                                  RbaE2?
+  RbaE3                                  RbaE3?
+  RbaE4                                  RbaE4?
+  RbaE5                                  RbaE5?
+  RbaE6                                  RbaE6?
+  RbaE7                                  RbaE7?
+  RbaE8                                  RbaE8?
+  RbaE9                                  RbaE9?
+  Subscription                           Subscription?
+  User_User_activeWorkspaceIdToWorkspace User[]             @relation("User_activeWorkspaceIdToWorkspace")
+  User_Workspace_createdByIdToUser       User?              @relation("Workspace_createdByIdToUser", fields: [createdById], references: [id])
+  WorkspaceMember                        WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  id          String    @id
+  userId      String
+  workspaceId String
+  role        Role      @default(VIEWER)
+  joinedAt    DateTime  @default(now())
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+enum AggregationSetStatus {
+  DRAFT
+  CALCULATING
+  COMPLETED
+  ERROR
+}
+
+enum AiProvider {
+  GEMINI
+  DOCUMENT_AI
+  CLOUD_VISION
+}
+
+enum CompanyScale {
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum DataSource {
+  AI
+  MANUAL
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PREPROCESSED
+  CLASSIFIED
+  ANALYZING
+  ANALYZED
+  FAILED
+}
+
+enum EsgAnswerStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  NOT_APPLICABLE
+}
+
+enum IndustryType {
+  TEXTILE_SPINNING_WEAVING
+  TEXTILE_DYEING_FINISHING
+  APPAREL_MANUFACTURING
+  FOOTWEAR_MANUFACTURING
+  ELECTRONICS_ASSEMBLY
+  SEMICONDUCTOR_COMPONENTS
+  ELECTRICAL_EQUIPMENT
+  RUBBER_PLASTICS
+  METAL_FABRICATION
+  FURNITURE_WOOD
+  OTHER
+}
+
+enum NaReasonType {
+  INDUSTRY_NOT_APPLICABLE
+  NO_FACILITY_OR_SYSTEM
+  NOT_LEGALLY_REQUIRED
+  SCALE_NOT_APPLICABLE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+enum PipelinePhase {
+  PREPROCESSED
+  CLASSIFIED
+  EXTRACTED
+}
+
+enum PlanCode {
+  FREE
+  STANDARD
+  PRO
+}
+
+enum Role {
+  OWNER
+  VIEWER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}

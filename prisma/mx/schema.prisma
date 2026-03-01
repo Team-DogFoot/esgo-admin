@@ -1,0 +1,691 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client-mx"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model AggregationSet {
+  id                     String                   @id
+  workspaceId            String
+  esgItemCode            String
+  name                   String
+  period                 String
+  status                 AggregationSetStatus     @default(DRAFT)
+  result                 Json?
+  errorMessage           String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  Workspace              Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  AggregationSetDocument AggregationSetDocument[]
+
+  @@unique([workspaceId, esgItemCode, period])
+  @@index([workspaceId])
+}
+
+model AggregationSetDocument {
+  id               String         @id
+  aggregationSetId String
+  documentId       String
+  documentType     String
+  label            String?
+  included         Boolean        @default(true)
+  extractedValue   Json?
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+  AggregationSet   AggregationSet @relation(fields: [aggregationSetId], references: [id], onDelete: Cascade)
+  Document         Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([aggregationSetId, documentId])
+  @@index([aggregationSetId])
+}
+
+model AiUsageLog {
+  id                String     @id
+  workspaceId       String
+  provider          AiProvider
+  model             String?
+  operation         String
+  promptTokens      Int?
+  candidateTokens   Int?
+  totalTokens       Int?
+  cachedTokens      Int?
+  cacheTokenCount   Int?
+  cacheTtlSeconds   Int?
+  pageCount         Int?
+  imageCount        Int?
+  estimatedCostUsd  Float?
+  documentId        String?
+  pipelineSessionId String?
+  durationMs        Int?
+  success           Boolean    @default(true)
+  errorMessage      String?
+  createdAt         DateTime   @default(now())
+  Workspace         Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([provider, createdAt])
+  @@index([workspaceId, createdAt])
+}
+
+model Document {
+  id                     String                   @id
+  workspaceId            String
+  uploaderId             String
+  fileName               String
+  displayName            String?
+  s3Key                  String
+  s3Url                  String
+  size                   BigInt
+  contentType            String?
+  status                 DocumentStatus           @default(UPLOADED)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  AggregationSetDocument AggregationSetDocument[]
+  User                   User                     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  Workspace              Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  DocumentItemLink       DocumentItemLink[]
+  EsgSummary             EsgSummary[]
+  PipelineSession        PipelineSession[]
+
+  @@index([workspaceId, createdAt])
+}
+
+model DocumentItemLink {
+  id          String         @id
+  workspaceId String
+  documentId  String
+  esgItemCode String
+  source      DataSource
+  summary     String?
+  data        Json?
+  phase       PipelinePhase?
+  createdAt   DateTime       @default(now())
+  Document    Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  Workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, documentId, esgItemCode])
+  @@index([workspaceId, esgItemCode])
+}
+
+model EcoEnvironment {
+  id                    String    @id
+  workspaceId           String    @unique
+  hasEnergyPolicy       Boolean?
+  hasGhgTracking        Boolean?
+  ghgScope1             Float?
+  ghgScope2             Float?
+  ghgScope3             Float?
+  hasReductionTargets   Boolean?
+  hasWaterPolicy        Boolean?
+  waterConsumption      Float?
+  hasWaterRecycling     Boolean?
+  hasBiodiversityPolicy Boolean?
+  hasConservationPlan   Boolean?
+  hasPollutionPolicy    Boolean?
+  hasEmergencyResponse  Boolean?
+  hasSpillPrevention    Boolean?
+  hasMaterialsPolicy    Boolean?
+  hasHazMatHandling     Boolean?
+  wasteRecyclingPct     Float?
+  hasEcoDesign          Boolean?
+  hasTakebackProgram    Boolean?
+  hasRecyclingProgram   Boolean?
+  hasProductSafety      Boolean?
+  hasNgoPartnerships    Boolean?
+  summary               String?
+  evidence              Json?
+  validationErrors      Json?
+  documentId            String?
+  extractedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime
+  Workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EcoEthics {
+  id                        String    @id
+  workspaceId               String    @unique
+  hasAntiCorruptionPolicy   Boolean?
+  hasCodeOfConduct          Boolean?
+  hasWhistleblower          Boolean?
+  hasAntiCorruptionTraining Boolean?
+  hasCompetitionPolicy      Boolean?
+  hasAntitrustTraining      Boolean?
+  hasDataProtectionPolicy   Boolean?
+  hasCybersecurity          Boolean?
+  hasDataTraining           Boolean?
+  summary                   String?
+  evidence                  Json?
+  validationErrors          Json?
+  documentId                String?
+  extractedAt               DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime
+  Workspace                 Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EcoLaborHumanRights {
+  id                         String    @id
+  workspaceId                String    @unique
+  hasOhsPolicy               Boolean?
+  hasOhsCertification        Boolean?
+  ohsCertification           String?
+  hasRiskAssessment          Boolean?
+  hasWorkingConditionsPolicy Boolean?
+  hasFairWages               Boolean?
+  hasWorkHoursPolicy         Boolean?
+  hasSocialDialogue          Boolean?
+  hasWorkerCouncils          Boolean?
+  hasGrievanceMechanism      Boolean?
+  hasTrainingProgram         Boolean?
+  hasCareerDevelopment       Boolean?
+  hasChildLaborPolicy        Boolean?
+  hasForcedLaborPolicy       Boolean?
+  hasSupplyChainDueDiligence Boolean?
+  hasDiversityPolicy         Boolean?
+  hasAntiHarassment          Boolean?
+  hasDiversityReporting      Boolean?
+  hasCommunityImpact         Boolean?
+  hasHumanRightsDd           Boolean?
+  summary                    String?
+  evidence                   Json?
+  validationErrors           Json?
+  documentId                 String?
+  extractedAt                DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime
+  Workspace                  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EcoSustainableProcurement {
+  id                       String    @id
+  workspaceId              String    @unique
+  hasSupplierEnvPolicy     Boolean?
+  hasSupplierEnvAudit      Boolean?
+  hasEnvClausesInContracts Boolean?
+  hasSupplierSocialCode    Boolean?
+  hasSupplierSocialAudit   Boolean?
+  hasSupplierTraining      Boolean?
+  summary                  String?
+  evidence                 Json?
+  validationErrors         Json?
+  documentId               String?
+  extractedAt              DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime
+  Workspace                Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model EsgSummary {
+  id                String          @id
+  workspaceId       String
+  esgItemCode       String
+  status            EsgAnswerStatus @default(NOT_STARTED)
+  locked            Boolean         @default(false)
+  summary           String?
+  source            DataSource?
+  documentId        String?
+  pipelinePhase     PipelinePhase?
+  sourceDocumentIds Json?
+  mergeStrategy     String?
+  fieldSources      Json?
+  filledFields      Int             @default(0)
+  totalFields       Int             @default(0)
+  completionRate    Int             @default(0)
+  grade             String?
+  keyMetrics        Json?
+  evidenceDetails   Json?
+  naReason          NaReasonType?
+  naRecommendedByAi Boolean         @default(false)
+  updatedAt         DateTime
+  createdAt         DateTime        @default(now())
+  Document          Document?       @relation(fields: [documentId], references: [id])
+  Workspace         Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, esgItemCode])
+  @@index([workspaceId, status])
+}
+
+model Invitation {
+  id          String    @id
+  email       String
+  workspaceId String
+  role        Role      @default(VIEWER)
+  token       String    @unique
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([email, workspaceId])
+}
+
+model NudgeDismiss {
+  id          String    @id
+  userId      String
+  workspaceId String
+  nudgeKey    String
+  createdAt   DateTime  @default(now())
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId, nudgeKey])
+  @@index([userId, workspaceId])
+}
+
+model Payment {
+  id          String        @id
+  workspaceId String
+  type        PaymentType
+  amount      Int
+  status      PaymentStatus @default(PENDING)
+  receiptUrl  String?
+  failReason  String?
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  Workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+model PipelineSession {
+  id           String        @id
+  workspaceId  String
+  documentId   String
+  sessionId    String        @unique
+  currentPhase PipelinePhase
+  autoMode     Boolean       @default(false)
+  state        Json?
+  errorCount   Int           @default(0)
+  lastError    String?
+  durationMs   Int?
+  jobId        String?
+  startedAt    DateTime      @default(now())
+  completedAt  DateTime?
+  Document     Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  Workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, documentId])
+}
+
+model Plan {
+  id           String         @id
+  code         PlanCode       @unique
+  name         String
+  monthlyPrice Int
+  features     Json           @default("[]")
+  maxMembers   Int            @default(0)
+  maxDocuments Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  Subscription Subscription[]
+}
+
+model SaqBusinessEthics {
+  id                String    @id
+  workspaceId       String    @unique
+  hasEthicsPolicy   Boolean?
+  hasWhistleblowing Boolean?
+  hasDataPrivacy    Boolean?
+  hasExportControls Boolean?
+  summary           String?
+  evidence          Json?
+  validationErrors  Json?
+  documentId        String?
+  extractedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  Workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model SaqCompanyMgmt {
+  id                    String    @id
+  workspaceId           String    @unique
+  hasSeniorMgmt         Boolean?
+  hasSocialMgr          Boolean?
+  hasEnvMgr             Boolean?
+  hasEthicsMgr          Boolean?
+  hasReport             Boolean?
+  reportStandard        String?
+  reportFramework       String?
+  hasAssurance          Boolean?
+  hasDdReport           Boolean?
+  hasCodeOfConduct      Boolean?
+  isPolicyCommunicated  Boolean?
+  hasGrievance          Boolean?
+  hasConfidentiality    Boolean?
+  hasAnonymousReporting Boolean?
+  summary               String?
+  evidence              Json?
+  validationErrors      Json?
+  documentId            String?
+  extractedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime
+  Workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model SaqEnvironment {
+  id                 String    @id
+  workspaceId        String    @unique
+  hasEnvPolicy       Boolean?
+  hasEms             Boolean?
+  emsCertification   String?
+  hasEnergyMgmt      Boolean?
+  hasRenewableEnergy Boolean?
+  renewableEnergyPct Float?
+  hasGhgScope12      Boolean?
+  ghgScope1          Float?
+  ghgScope2          Float?
+  hasGhgTargets      Boolean?
+  hasSbti            Boolean?
+  hasGhgScope3       Boolean?
+  ghgScope3          Float?
+  hasCdp             Boolean?
+  cdpScore           String?
+  hasWaterMgmt       Boolean?
+  waterConsumption   Float?
+  hasWaterRisk       Boolean?
+  hasWasteMgmt       Boolean?
+  wasteRecyclingPct  Float?
+  hasHazWasteMgmt    Boolean?
+  hasSubstanceMgmt   Boolean?
+  hasBiodiversity    Boolean?
+  hasAirEmissions    Boolean?
+  summary            String?
+  evidence           Json?
+  validationErrors   Json?
+  documentId         String?
+  extractedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime
+  Workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model SaqHealthSafety {
+  id                   String    @id
+  workspaceId          String    @unique
+  hasHsms              Boolean?
+  hsmsCertification    String?
+  hasRiskAssessment    Boolean?
+  hasIncidentReporting Boolean?
+  hasEmergencyPlan     Boolean?
+  hasHsTraining        Boolean?
+  summary              String?
+  evidence             Json?
+  validationErrors     Json?
+  documentId           String?
+  extractedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+  Workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model SaqHumanRights {
+  id                    String    @id
+  workspaceId           String    @unique
+  hasChildLaborPolicy   Boolean?
+  hasAgeVerification    Boolean?
+  hasForcedLaborPolicy  Boolean?
+  hasWorkerFreedom      Boolean?
+  hasFreedomOfAssoc     Boolean?
+  hasNonDiscrimination  Boolean?
+  hasWorkingHoursPolicy Boolean?
+  hasEqualPay           Boolean?
+  summary               String?
+  evidence              Json?
+  validationErrors      Json?
+  documentId            String?
+  extractedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime
+  Workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model SaqRawMaterials {
+  id                        String    @id
+  workspaceId               String    @unique
+  hasConflictMineralsPolicy Boolean?
+  hasCmrt                   Boolean?
+  hasEmrt                   Boolean?
+  hasExtendedMineralsDd     Boolean?
+  hasSmelterIdentification  Boolean?
+  hasSourceMgmtSystem       Boolean?
+  hasSupplyChainMapping     Boolean?
+  hasRmGrievance            Boolean?
+  summary                   String?
+  evidence                  Json?
+  validationErrors          Json?
+  documentId                String?
+  extractedAt               DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime
+  Workspace                 Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model SaqSupplyChain {
+  id                        String    @id
+  workspaceId               String    @unique
+  hasSupplierCode           Boolean?
+  supplierCodeCoverage      Json?
+  hasSupplierRiskAssessment Boolean?
+  hasSupplierAudit          Boolean?
+  hasSupplierTraining       Boolean?
+  hasCorrectiveAction       Boolean?
+  summary                   String?
+  evidence                  Json?
+  validationErrors          Json?
+  documentId                String?
+  extractedAt               DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime
+  Workspace                 Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                         String             @id
+  workspaceId                String             @unique
+  planId                     String
+  status                     SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart         DateTime
+  currentPeriodEnd           DateTime
+  monthlyAnalysisLimit       Int                @default(3)
+  monthlyReportLimit         Int                @default(1)
+  currentMonthUsage          Int                @default(0)
+  currentMonthReportUsage    Int                @default(0)
+  bonusAnalysis              Int                @default(0)
+  bonusReport                Int                @default(0)
+  usageResetAt               DateTime           @default(now())
+  trialEndsAt                DateTime?
+  lemonSqueezyCustomerId     String?
+  lemonSqueezySubscriptionId String?
+  canceledAt                 DateTime?
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime
+  Plan                       Plan               @relation(fields: [planId], references: [id])
+  Workspace                  Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                                          String            @id
+  name                                        String?
+  email                                       String?           @unique
+  emailVerified                               DateTime?
+  image                                       String?
+  activeWorkspaceId                           String?
+  createdAt                                   DateTime          @default(now())
+  updatedAt                                   DateTime
+  Account                                     Account[]
+  Document                                    Document[]
+  NudgeDismiss                                NudgeDismiss[]
+  Workspace_User_activeWorkspaceIdToWorkspace Workspace?        @relation("User_activeWorkspaceIdToWorkspace", fields: [activeWorkspaceId], references: [id])
+  Workspace_Workspace_createdByIdToUser       Workspace[]       @relation("Workspace_createdByIdToUser")
+  WorkspaceMember                             WorkspaceMember[]
+}
+
+model Workspace {
+  id                                     String                     @id
+  name                                   String
+  businessNumber                         String
+  createdById                            String?
+  planCode                               PlanCode                   @default(FREE)
+  industryType                           IndustryType?
+  companyScale                           CompanyScale?
+  createdAt                              DateTime                   @default(now())
+  updatedAt                              DateTime
+  AggregationSet                         AggregationSet[]
+  AiUsageLog                             AiUsageLog[]
+  Document                               Document[]
+  DocumentItemLink                       DocumentItemLink[]
+  EcoEnvironment                         EcoEnvironment?
+  EcoEthics                              EcoEthics?
+  EcoLaborHumanRights                    EcoLaborHumanRights?
+  EcoSustainableProcurement              EcoSustainableProcurement?
+  EsgSummary                             EsgSummary[]
+  Invitation                             Invitation[]
+  NudgeDismiss                           NudgeDismiss[]
+  Payment                                Payment[]
+  PipelineSession                        PipelineSession[]
+  SaqBusinessEthics                      SaqBusinessEthics?
+  SaqCompanyMgmt                         SaqCompanyMgmt?
+  SaqEnvironment                         SaqEnvironment?
+  SaqHealthSafety                        SaqHealthSafety?
+  SaqHumanRights                         SaqHumanRights?
+  SaqRawMaterials                        SaqRawMaterials?
+  SaqSupplyChain                         SaqSupplyChain?
+  Subscription                           Subscription?
+  User_User_activeWorkspaceIdToWorkspace User[]                     @relation("User_activeWorkspaceIdToWorkspace")
+  User_Workspace_createdByIdToUser       User?                      @relation("Workspace_createdByIdToUser", fields: [createdById], references: [id])
+  WorkspaceMember                        WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  id          String    @id
+  userId      String
+  workspaceId String
+  role        Role      @default(VIEWER)
+  joinedAt    DateTime  @default(now())
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+enum AggregationSetStatus {
+  DRAFT
+  CALCULATING
+  COMPLETED
+  ERROR
+}
+
+enum AiProvider {
+  GEMINI
+  DOCUMENT_AI
+  CLOUD_VISION
+}
+
+enum CompanyScale {
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum DataSource {
+  AI
+  MANUAL
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PREPROCESSED
+  CLASSIFIED
+  ANALYZING
+  ANALYZED
+  FAILED
+}
+
+enum EsgAnswerStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  NOT_APPLICABLE
+}
+
+enum IndustryType {
+  AUTO_OEM_ASSEMBLY
+  AUTO_PARTS_METAL
+  AUTO_PARTS_PLASTIC_RUBBER
+  AUTO_PARTS_ELECTRICAL
+  AEROSPACE_DEFENSE
+  MEDICAL_DEVICES
+  ELECTRONICS_SEMICONDUCTOR
+  CHEMICAL_PHARMACEUTICAL
+  FOOD_BEVERAGE
+  TEXTILE_APPAREL
+  GENERAL_MANUFACTURING
+}
+
+enum NaReasonType {
+  INDUSTRY_NOT_APPLICABLE
+  NO_FACILITY_OR_SYSTEM
+  NOT_LEGALLY_REQUIRED
+  SCALE_NOT_APPLICABLE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+}
+
+enum PipelinePhase {
+  PREPROCESSED
+  CLASSIFIED
+  EXTRACTED
+}
+
+enum PlanCode {
+  FREE
+  STANDARD
+  PRO
+}
+
+enum Role {
+  OWNER
+  VIEWER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}
