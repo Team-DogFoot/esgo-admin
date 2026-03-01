@@ -1,5 +1,8 @@
 import { S3Client, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+
+const log = logger.child({ module: "s3" });
 
 const s3 = new S3Client({
   region: env.AWS_REGION,
@@ -41,7 +44,11 @@ export async function getSamplePdfMeta(
       sizeBytes: head.ContentLength,
       lastModified: head.LastModified?.toISOString(),
     };
-  } catch {
+  } catch (error: unknown) {
+    const name = (error as { name?: string })?.name;
+    if (name !== "NotFound" && name !== "NoSuchKey") {
+      log.error({ err: error, regionId, bucket, key }, "S3 HeadObject failed");
+    }
     return { exists: false };
   }
 }

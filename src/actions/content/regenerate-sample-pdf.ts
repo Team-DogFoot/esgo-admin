@@ -19,7 +19,8 @@ interface RegenerateResult {
 }
 
 function buildUrl(domain: string, path: string): string {
-  const protocol = domain.startsWith("localhost") ? "http" : "https";
+  const isLocal = domain.startsWith("localhost") || domain.startsWith("127.0.0.1");
+  const protocol = isLocal ? "http" : "https";
   return `${protocol}://${domain}${path}`;
 }
 
@@ -57,6 +58,9 @@ export async function regenerateSamplePdf(
     }
 
     const result = (await response.json()) as RegenerateResult;
+    if (!result.success) {
+      return fail("원격 API에서 실패를 반환했습니다.");
+    }
     log.info(
       { regionId: parsed.data.regionId, result },
       "sample PDF generated",
