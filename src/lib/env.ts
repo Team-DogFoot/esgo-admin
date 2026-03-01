@@ -21,6 +21,10 @@ const serverSchema = z.object({
     .string()
     .transform((v) => JSON.parse(v))
     .pipe(z.array(regionSchema).min(1, "At least one region is required")),
+  AWS_REGION: z.string().min(1, "AWS_REGION is required"),
+  AWS_ACCESS_KEY_ID: z.string().min(1, "AWS_ACCESS_KEY_ID is required"),
+  AWS_SECRET_ACCESS_KEY: z.string().min(1, "AWS_SECRET_ACCESS_KEY is required"),
+  INTERNAL_API_KEY: z.string().min(1, "INTERNAL_API_KEY is required"),
   LOG_LEVEL: z.string().optional(),
 });
 
